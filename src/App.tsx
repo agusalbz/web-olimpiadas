@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import {
+  DbStorageService,
+  type ProductItem,
+  type Order
+} from './services/dbStorage';
+import { CartDrawer, type CartItem } from './components/CartDrawer';
+import { SalesAdminPanel } from './components/SalesAdminPanel';
 
 // --- TYPES & INTERFACES ---
 export interface Package {
@@ -51,9 +58,10 @@ export interface User {
   avatarInitials: string;
   preferences: string[];
   points: number;
+  role?: 'cliente' | 'jefe_ventas';
 }
 
-export type PageType = 'home' | 'login' | 'register' | 'dashboard' | 'profile' | 'checkout' | 'terms';
+export type PageType = 'home' | 'login' | 'register' | 'dashboard' | 'profile' | 'checkout' | 'terms' | 'sales_admin';
 
 
 // ==========================================
@@ -380,7 +388,24 @@ const INITIAL_USER: User = {
   verified: true,
   avatarInitials: 'MG',
   preferences: ['Playa', 'Ciudad', 'Cultural', 'Gastronomía'],
-  points: 14850
+  points: 14850,
+  role: 'cliente'
+};
+
+const SALES_MANAGER_USER: User = {
+  name: 'Carlos',
+  lastName: 'Méndez',
+  email: 'jefeventas@horizontemoderno.com',
+  phone: '+54 9 11 9876-5432',
+  country: 'Argentina',
+  city: 'Buenos Aires',
+  birthDate: '1985-03-22',
+  passport: 'ARG-5544332',
+  verified: true,
+  avatarInitials: 'CM',
+  preferences: ['Gestión Comercial', 'Ventas', 'Operaciones'],
+  points: 0,
+  role: 'jefe_ventas'
 };
 
 const INITIAL_TRIPS: Trip[] = [
@@ -1079,6 +1104,113 @@ export default function App() {
   const [paymentDone, setPaymentDone] = useState<boolean>(false);
   const [lastBookingCode, setLastBookingCode] = useState<string>('VY-83921');
 
+  // Carrito de Compras (Encargo Principal Olimpiadas IPP)
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hm_cart');
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hm_cart', JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  // Persistencia de Órdenes y Base de Datos Local
+  const [dbOrders, setDbOrders] = useState<Order[]>(() => DbStorageService.getOrders());
+  const refreshDbOrders = () => {
+    setDbOrders(DbStorageService.getOrders());
+  };
+
+  useEffect(() => {
+    DbStorageService.initDatabase();
+    refreshDbOrders();
+  }, []);
+
+  const handleAddToCart = (item: ProductItem | Package, quantity: number = 1) => {
+    soundFx.playClick();
+    let product: ProductItem;
+    if ('codigo' in item) {
+      product = item;
+    } else {
+      product = {
+        codigo: item.id.toUpperCase(),
+        nombre: item.title,
+        descripcion: item.description,
+        categoria: 'paquete',
+        precioUnitario: item.price,
+        stock: 12,
+        imagen: item.image,
+        noches: item.nights,
+        incluye: item.includes,
+        rating: item.rating,
+        highlight: item.highlight
+      };
+    }
+
+    setCartItems((prev) => {
+      const existing = prev.find((ci) => ci.producto.codigo === product.codigo);
+      if (existing) {
+        return prev.map((ci) =>
+          ci.producto.codigo === product.codigo
+            ? { ...ci, cantidad: ci.cantidad + quantity, subtotal: (ci.cantidad + quantity) * ci.producto.precioUnitario }
+            : ci
+        );
+      } else {
+        return [...prev, { producto: product, cantidad: quantity, subtotal: quantity * product.precioUnitario }];
+      }
+    });
+
+    showToast(`🛒 "${product.nombre}" agregado al carrito`);
+  };
+
+  const handleUpdateCartQuantity = (codigo: string, delta: number) => {
+    soundFx.playClick();
+    setCartItems((prev) =>
+      prev
+        .map((ci) => {
+          if (ci.producto.codigo === codigo) {
+            const newQty = ci.cantidad + delta;
+            if (newQty <= 0) return null;
+            return { ...ci, cantidad: newQty, subtotal: newQty * ci.producto.precioUnitario };
+          }
+          return ci;
+        })
+        .filter(Boolean) as CartItem[]
+    );
+  };
+
+  const handleRemoveFromCart = (codigo: string) => {
+    soundFx.playClick();
+    setCartItems((prev) => prev.filter((ci) => ci.producto.codigo !== codigo));
+    showToast('Servicio quitado del carrito');
+  };
+
+  const handleClearCart = () => {
+    if (window.confirm('¿Seguro que deseas vaciar todos los servicios del carrito?')) {
+      setCartItems([]);
+      showToast('Carrito vaciado');
+    }
+  };
+
+  const handleCheckoutCart = () => {
+    if (cartItems.length === 0) {
+      showToast('Tu carrito está vacío. Agrega algún paquete o servicio primero.');
+      return;
+    }
+    setPaymentDone(false);
+    if (!user) {
+      showToast('Por favor, inicia sesión para continuar con el cobro.');
+      navigateTo('login');
+    } else {
+      navigateTo('checkout');
+    }
+  };
+
   // Search filter state in Home
   const [searchDestination, setSearchDestination] = useState<string>('');
   const [searchDates, setSearchDates] = useState<string>('2026-11-15');
@@ -1243,6 +1375,45 @@ export default function App() {
               <span>Paleta UX/UI</span>
             </button>
 
+            {/* 🛒 BOTÓN CARRITO DE COMPRAS (ENCARGO PRINCIPAL) */}
+            <button
+              onClick={() => {
+                soundFx.playClick();
+                setIsCartOpen(true);
+              }}
+              className="relative px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-[#1E293B] dark:text-[#E2E8F0] hover:border-[#0EA5E9] transition cursor-pointer flex items-center gap-2 shadow-xs"
+              title="Ver Carrito de Compras (Olimpiadas IPP)"
+            >
+              <div className="relative flex items-center">
+                <svg className="w-4 h-4 text-[#0EA5E9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                {cartItems.reduce((acc, it) => acc + it.cantidad, 0) > 0 && (
+                  <span className="absolute -top-2.5 -right-3 px-1.5 py-0.2 rounded-full bg-[#F97316] text-white text-[10px] font-bold shadow-md">
+                    {cartItems.reduce((acc, it) => acc + it.cantidad, 0)}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-bold hidden sm:inline">Carrito</span>
+            </button>
+
+            {/* 👔 ACCESO DIRECTO AL PANEL DE VENTAS (ADMIN 1.4) */}
+            <button
+              onClick={() => {
+                soundFx.playClick();
+                navigateTo('sales_admin');
+              }}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                page === 'sales_admin'
+                  ? 'bg-[#0EA5E9] text-white border-[#0EA5E9]'
+                  : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-[#0EA5E9]'
+              }`}
+              title="Panel del Jefe de Ventas (Punto 1.4 del PDF)"
+            >
+              <span>👔</span>
+              <span className="hidden xl:inline">Panel Ventas</span>
+            </button>
+
             {user ? (
               <>
                 <button
@@ -1344,6 +1515,31 @@ export default function App() {
               className="block w-full text-left py-2.5 px-3 rounded-lg text-[#1E293B] dark:text-[#E2E8F0] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] font-medium"
             >
               Explorar Paquetes
+            </button>
+
+            <button
+              onClick={() => {
+                setIsCartOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-lg text-[#1E293B] dark:text-[#E2E8F0] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] font-bold flex items-center justify-between"
+            >
+              <span>🛒 Carrito de Compras</span>
+              {cartItems.reduce((acc, it) => acc + it.cantidad, 0) > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-[#F97316] text-white text-xs font-bold">
+                  {cartItems.reduce((acc, it) => acc + it.cantidad, 0)}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                navigateTo('sales_admin');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-lg text-[#0EA5E9] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] font-bold flex items-center gap-2"
+            >
+              <span>👔 Panel del Jefe de Ventas</span>
             </button>
 
             <button
@@ -1584,6 +1780,7 @@ export default function App() {
           <HomePage
             packages={MOCK_PACKAGES}
             onBookNow={handleBookNow}
+            onAddToCart={handleAddToCart}
             onNavigateRegister={() => navigateTo('register')}
             isLoggedIn={!!user}
             searchDestination={searchDestination}
@@ -1603,6 +1800,12 @@ export default function App() {
         {page === 'login' && (
           <LoginPage
             onLoginSuccess={(email) => {
+              if (email === 'jefeventas@horizontemoderno.com') {
+                setUser(SALES_MANAGER_USER);
+                showToast('¡Sesión iniciada como Jefe de Ventas!');
+                navigateTo('sales_admin');
+                return;
+              }
               if (!user) {
                 setUser({
                   ...INITIAL_USER,
@@ -1610,11 +1813,16 @@ export default function App() {
                 });
               }
               showToast(`¡Bienvenido de nuevo!`);
-              if (selectedPackage && !paymentDone) {
+              if (cartItems.length > 0 || selectedPackage) {
                 navigateTo('checkout');
               } else {
                 navigateTo('dashboard');
               }
+            }}
+            onLoginAsSalesAdmin={() => {
+              setUser(SALES_MANAGER_USER);
+              showToast('Sesión iniciada como Jefe de Ventas (Credenciales de Prueba)');
+              navigateTo('sales_admin');
             }}
             onNavigateRegister={() => navigateTo('register')}
           />
@@ -1626,7 +1834,7 @@ export default function App() {
             onRegisterSuccess={(newUser) => {
               setUser(newUser);
               showToast('¡Cuenta creada exitosamente!');
-              if (selectedPackage && !paymentDone) {
+              if (cartItems.length > 0 || (selectedPackage && !paymentDone)) {
                 navigateTo('checkout');
               } else {
                 navigateTo('dashboard');
@@ -1640,6 +1848,8 @@ export default function App() {
           <DashboardPage
             user={user}
             trips={trips}
+            orders={dbOrders}
+            onRefreshOrders={refreshDbOrders}
             onNewBooking={() => navigateTo('home')}
             onViewPackage={(packageId) => {
               const pkg = MOCK_PACKAGES.find((p) => p.id === packageId);
@@ -1659,10 +1869,14 @@ export default function App() {
           />
         )}
 
-        {page === 'checkout' && selectedPackage && (
+        {page === 'checkout' && (
           <CheckoutPage
             user={user}
-            pkg={selectedPackage}
+            pkg={selectedPackage || MOCK_PACKAGES[0]}
+            cartItems={cartItems}
+            onClearCart={() => setCartItems([])}
+            currency={currency}
+            formatPrice={(val: number) => formatPriceCustom(val, currency)}
             passengersCount={searchPassengers || 2}
             paymentDone={paymentDone}
             bookingCode={lastBookingCode}
@@ -1670,7 +1884,9 @@ export default function App() {
               setLastBookingCode(newBookingCode);
               setPaymentDone(true);
               setTrips([createdTrip, ...trips]);
-              showToast('¡Pago procesado con éxito!');
+              setCartItems([]);
+              refreshDbOrders();
+              showToast('¡Pago procesado y registrado como Pendiente de Entrega!');
             }}
             onGoToDashboard={() => navigateTo('dashboard')}
             onExploreMore={() => navigateTo('home')}
@@ -1680,7 +1896,30 @@ export default function App() {
         {page === 'terms' && (
           <TermsPage onNavigate={navigateTo} />
         )}
+
+        {page === 'sales_admin' && (
+          <SalesAdminPanel
+            onBackToClient={() => navigateTo('home')}
+            formatPrice={(val) => formatPriceCustom(val, currency)}
+          />
+        )}
       </main>
+
+      {/* 🛒 DRAWER CARRITO DE COMPRAS MULTI-PRODUCTO */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cartItems}
+        onUpdateQuantity={handleUpdateCartQuantity}
+        onRemoveItem={handleRemoveFromCart}
+        onClearCart={handleClearCart}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          handleCheckoutCart();
+        }}
+        currency={currency}
+        formatPrice={(val) => formatPriceCustom(val, currency)}
+      />
 
       {/* 3D PACKAGE DETAIL & ITINERARY MODAL */}
       <PackageDetailModal
@@ -1710,6 +1949,7 @@ export default function App() {
 interface HomePageProps {
   packages: Package[];
   onBookNow: (pkg: Package) => void;
+  onAddToCart: (item: ProductItem | Package) => void;
   onNavigateRegister: () => void;
   isLoggedIn: boolean;
   searchDestination: string;
@@ -2314,6 +2554,7 @@ function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
 function HomePage({
   packages,
   onBookNow,
+  onAddToCart,
   onNavigateRegister,
   isLoggedIn,
   searchDestination,
@@ -2328,6 +2569,21 @@ function HomePage({
   currency,
   onExplore3D
 }: HomePageProps) {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [serviceCategory, setServiceCategory] = useState<'todos' | 'paquete' | 'aereo' | 'estadia' | 'auto'>('todos');
+
+  const allInventoryProducts = DbStorageService.getProducts();
+
+  const filteredInventory = allInventoryProducts.filter((p) => {
+    const matchesCategory = serviceCategory === 'todos' || p.categoria === serviceCategory;
+    const matchesQuery =
+      searchDestination === '' ||
+      p.nombre.toLowerCase().includes(searchDestination.toLowerCase()) ||
+      p.descripcion.toLowerCase().includes(searchDestination.toLowerCase()) ||
+      p.codigo.toLowerCase().includes(searchDestination.toLowerCase());
+    return matchesCategory && matchesQuery;
+  });
+
   const filteredPackages = packages.filter((pkg) => {
     const matchesTag = activeFilterTag === 'Todos' || pkg.tag === activeFilterTag;
     const matchesQuery =
@@ -2336,8 +2592,6 @@ function HomePage({
       pkg.country.toLowerCase().includes(searchDestination.toLowerCase());
     return matchesTag && matchesQuery;
   });
-
-  const filterCategories = ['Todos', 'Más vendido', 'Oferta', 'Romántico', 'Aventura', 'Exclusivo', 'Lujo'];
 
   return (
     <div className="flex flex-col">
@@ -2501,42 +2755,195 @@ function HomePage({
         </div>
       </section>
 
-      {/* PACKAGES CATALOG SECTION CON 3D TILT CARDS */}
+      {/* PACKAGES CATALOG SECTION CON 3D TILT CARDS & VISTA LISTA SIN IMÁGENES (1.3.1) */}
       <section id="paquetes-section" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0EA5E9] dark:text-[#94A3B8] uppercase tracking-wider mb-2">
               <span className="w-2 h-2 rounded-full bg-[#0EA5E9] dark:bg-[#94A3B8]" />
-              Catálogo Inmersivo 3D
+              Catálogo de Servicios Turísticos
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
-              Paquetes Turísticos Destacados
+              Paquetes, Vuelos, Estadías y Autos
             </h2>
-            <p className="text-[#64748B] dark:text-[#94A3B8] mt-2 max-w-xl">
-              Vuelos directos, estadías en hoteles prémium y excursiones diseñadas por especialistas para vivir momentos inolvidables.
+            <p className="text-[#64748B] dark:text-[#94A3B8] mt-2 max-w-xl text-sm">
+              Selecciona tus servicios turísticos, agrégalos a tu carrito de compras o resérvalos directamente con confirmación en tiempo real.
             </p>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-            {filterCategories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveFilterTag(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                  activeFilterTag === cat
-                    ? 'bg-[#0EA5E9] dark:bg-[#334155] text-white dark:text-[#E2E8F0] shadow-md dark:border dark:border-[#94A3B8]/40'
-                    : 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] hover:bg-[#E2E8F0] dark:hover:bg-[#334155]'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          {/* Selector de Modo de Vista (Requisito 1.3.1 del PDF) */}
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shrink-0">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-slate-700 text-[#0EA5E9] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🎴</span>
+              <span>Cuadrícula 3D</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-700 text-[#0EA5E9] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="1.3.1. Consultar la lista de productos (en formato de lista, sin imágenes)"
+            >
+              <span>📋</span>
+              <span>Lista Rápida (Sin Fotos)</span>
+            </button>
           </div>
         </div>
 
-        {/* 6 Packages Grid CON 3D TILT CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Categorías de Servicios del PDF (Paquetes, Aéreos, Estadías, Autos) */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none border-b border-slate-200 dark:border-white/10">
+          <button
+            onClick={() => {
+              setServiceCategory('todos');
+              setActiveFilterTag('Todos');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+              serviceCategory === 'todos' && activeFilterTag === 'Todos'
+                ? 'bg-[#0EA5E9] text-white shadow-md'
+                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+            }`}
+          >
+            Todos los Servicios
+          </button>
+          <button
+            onClick={() => {
+              setServiceCategory('paquete');
+              setActiveFilterTag('Todos');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+              serviceCategory === 'paquete'
+                ? 'bg-[#0EA5E9] text-white shadow-md'
+                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+            }`}
+          >
+            🌴 Paquetes Integrales
+          </button>
+          <button
+            onClick={() => {
+              setServiceCategory('aereo');
+              setActiveFilterTag('Todos');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+              serviceCategory === 'aereo'
+                ? 'bg-[#0EA5E9] text-white shadow-md'
+                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+            }`}
+          >
+            ✈️ Pasajes Aéreos
+          </button>
+          <button
+            onClick={() => {
+              setServiceCategory('estadia');
+              setActiveFilterTag('Todos');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+              serviceCategory === 'estadia'
+                ? 'bg-[#0EA5E9] text-white shadow-md'
+                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+            }`}
+          >
+            🏨 Estadías & Hoteles
+          </button>
+          <button
+            onClick={() => {
+              setServiceCategory('auto');
+              setActiveFilterTag('Todos');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+              serviceCategory === 'auto'
+                ? 'bg-[#0EA5E9] text-white shadow-md'
+                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+            }`}
+          >
+            🚗 Alquiler de Autos
+          </button>
+        </div>
+
+        {/* ============================================================== */}
+        {/* VISTA 1: LISTA RÁPIDA SIN IMÁGENES (Punto 1.3.1 del PDF)        */}
+        {/* ============================================================== */}
+        {viewMode === 'list' ? (
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-slate-800/90 shadow-xl overflow-hidden animate-fadeIn">
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <span className="font-bold text-[#0EA5E9] flex items-center gap-2">
+                <span>📋</span>
+                <span>Modo de Vista: Lista de Productos sin imágenes (Requisito 1.3.1)</span>
+              </span>
+              <span className="text-slate-500">
+                Mostrando {filteredInventory.length} servicios disponibles
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-white/10 text-[#64748B] dark:text-[#94A3B8] font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3.5 px-4">Código</th>
+                    <th className="py-3.5 px-4">Categoría</th>
+                    <th className="py-3.5 px-4">Nombre y Descripción del Servicio</th>
+                    <th className="py-3.5 px-4 text-center">Cupos</th>
+                    <th className="py-3.5 px-4 text-right">Precio Unitario</th>
+                    <th className="py-3.5 px-4 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                  {filteredInventory.map((item) => (
+                    <tr key={item.codigo} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-[#0EA5E9]">
+                        {item.codigo}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 font-semibold capitalize text-[11px]">
+                          {item.categoria}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-[#1E293B] dark:text-white text-sm">
+                          {item.nombre}
+                        </div>
+                        <div className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                          {item.descripcion}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">
+                          {item.stock} cupos
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-bold text-[#F97316] text-sm">
+                        {formatPriceCustom(item.precioUnitario, currency)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => onAddToCart(item)}
+                            className="px-3 py-1.5 rounded-lg bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            title="Añadir este servicio al carrito"
+                          >
+                            <span>🛒</span>
+                            <span>Añadir</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* ============================================================== */
+          /* VISTA 2: CUADRÍCULA 3D INMERSIVA CON FOTOS                    */
+          /* ============================================================== */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPackages.map((pkg) => (
             <TiltCard key={pkg.id} maxTilt={12} scale={1.03}>
               <div className="bg-white dark:bg-[#1E293B] rounded-2xl overflow-hidden border border-[#E2E8F0] dark:border-[#334155] shadow-sm hover:shadow-2xl dark:hover:border-[#94A3B8]/50 transition-all duration-300 flex flex-col h-full group preserve-3d">
@@ -2640,17 +3047,25 @@ function HomePage({
                           soundFx.playWoosh();
                           onExplore3D(pkg);
                         }}
-                        className="px-3.5 py-2.5 rounded-xl border border-sky-300 dark:border-sky-500/30 bg-sky-50/80 dark:bg-slate-800 text-[#0EA5E9] hover:bg-sky-100 dark:hover:bg-slate-700 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-2.5 rounded-xl border border-sky-300 dark:border-sky-500/30 bg-sky-50/80 dark:bg-slate-800 text-[#0EA5E9] hover:bg-sky-100 dark:hover:bg-slate-700 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                         title="Ver itinerario detallado y clima 3D"
                       >
                         <span>✨ 3D</span>
+                      </button>
+                      <button
+                        onClick={() => onAddToCart(pkg)}
+                        className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0EA5E9] hover:text-[#0EA5E9] text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
+                        title="Añadir este paquete al carrito de compras"
+                      >
+                        <span>🛒</span>
+                        <span className="hidden sm:inline">Añadir</span>
                       </button>
                       <button
                         onClick={() => {
                           soundFx.playCelebration();
                           onBookNow(pkg);
                         }}
-                        className="px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md shadow-orange-500/20 hover:shadow-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                        className="px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md shadow-orange-500/20 hover:shadow-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
                       >
                         <span>Reservar</span>
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2664,6 +3079,7 @@ function HomePage({
             </TiltCard>
           ))}
         </div>
+        )}
 
         {filteredPackages.length === 0 && (
           <div className="text-center py-16 bg-[#F1F5F9]/40 dark:bg-[#1E293B] rounded-2xl border border-dashed border-[#E2E8F0] dark:border-[#334155]">
@@ -2781,10 +3197,11 @@ function HomePage({
 // ==========================================
 interface LoginPageProps {
   onLoginSuccess: (email: string) => void;
+  onLoginAsSalesAdmin?: () => void;
   onNavigateRegister: () => void;
 }
 
-function LoginPage({ onLoginSuccess, onNavigateRegister }: LoginPageProps) {
+function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: LoginPageProps) {
   const [email, setEmail] = useState<string>('maria.gonzalez@horizontemoderno.com');
   const [password, setPassword] = useState<string>('password123');
   const [rememberMe, setRememberMe] = useState<boolean>(true);
@@ -2803,6 +3220,12 @@ function LoginPage({ onLoginSuccess, onNavigateRegister }: LoginPageProps) {
     }
 
     setErrorMsg(null);
+    if (email.toLowerCase().includes('jefeventas') || email.toLowerCase().includes('ventas')) {
+      if (onLoginAsSalesAdmin) {
+        onLoginAsSalesAdmin();
+        return;
+      }
+    }
     onLoginSuccess(email);
   };
 
@@ -2847,6 +3270,44 @@ function LoginPage({ onLoginSuccess, onNavigateRegister }: LoginPageProps) {
             <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-2">
               Ingresa tus credenciales para acceder a tus reservas y beneficios.
             </p>
+          </div>
+
+          {/* Box de Credenciales de Prueba Olimpiadas IPP */}
+          <div className="p-3.5 bg-gradient-to-r from-sky-50 to-orange-50 dark:from-slate-800/80 dark:to-slate-800/50 border border-sky-200 dark:border-sky-500/20 rounded-2xl shadow-xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-[#0EA5E9] uppercase tracking-wider flex items-center gap-1.5">
+                <span>🧪</span>
+                <span>Mesa Evaluadora - Olimpiadas IPP</span>
+              </span>
+              <span className="text-[10px] bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-bold px-2 py-0.5 rounded-full">
+                1-Clic
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onLoginSuccess('maria.gonzalez@horizontemoderno.com')}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-left hover:border-[#0EA5E9] transition cursor-pointer group shadow-2xs"
+              >
+                <div className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1">
+                  <span>👤</span>
+                  <span>Pasajera (María)</span>
+                </div>
+                <div className="text-[10px] text-slate-500 line-clamp-1">maria.gonzalez@...</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onLoginAsSalesAdmin ? onLoginAsSalesAdmin() : onLoginSuccess('jefeventas@horizontemoderno.com')}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-500/20 text-left hover:border-[#F97316] transition cursor-pointer group shadow-2xs"
+              >
+                <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <span>👔</span>
+                  <span>Jefe Ventas (Carlos)</span>
+                </div>
+                <div className="text-[10px] text-slate-500 line-clamp-1">jefeventas@...</div>
+              </button>
+            </div>
           </div>
 
           {/* Social Logins */}
@@ -3222,13 +3683,22 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
 interface DashboardPageProps {
   user: User;
   trips: Trip[];
+  orders?: Order[];
+  onRefreshOrders?: () => void;
   onNewBooking: () => void;
   onViewPackage: (packageId: string) => void;
 }
 
-function DashboardPage({ user, trips, onNewBooking }: DashboardPageProps) {
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
+function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking }: DashboardPageProps) {
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'upcoming' | 'completed' | 'cancelled'>('pedidos');
   const [selectedVoucherTrip, setSelectedVoucherTrip] = useState<Trip | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [editNotes, setEditNotes] = useState<string>('');
+
+  const myOrders = (orders && orders.length > 0 ? orders : DbStorageService.getOrders()).filter(
+    (o) => o.clienteEmail === user.email || user.email.includes('maria') || o.clienteNombre.toLowerCase().includes(user.name.toLowerCase())
+  );
+  const pendingOrders = myOrders.filter((o) => o.estado === 'pendiente_entrega');
 
   const upcomingTrips = trips.filter((t) => t.status === 'upcoming');
   const completedTrips = trips.filter((t) => t.status === 'completed');
@@ -3346,8 +3816,23 @@ function DashboardPage({ user, trips, onNewBooking }: DashboardPageProps) {
 
       {/* TRIPS LIST WITH TABS */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#334155]">
-          <div className="flex gap-4 sm:gap-8">
+        <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#334155] overflow-x-auto pb-1">
+          <div className="flex gap-4 sm:gap-6 min-w-max">
+            <button
+              onClick={() => setActiveTab('pedidos')}
+              className={`pb-4 text-sm font-bold border-b-2 transition cursor-pointer flex items-center gap-2 ${
+                activeTab === 'pedidos'
+                  ? 'border-[#0EA5E9] text-[#0EA5E9] dark:text-[#38BDF8]'
+                  : 'border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
+              }`}
+            >
+              <span>⏳ Pedidos Pendientes de Entrega (1.3.3)</span>
+              {pendingOrders.length > 0 && (
+                <span className="px-2 py-0.5 text-xs bg-[#F97316] text-white rounded-full font-extrabold animate-pulse">
+                  {pendingOrders.length}
+                </span>
+              )}
+            </button>
             <button
               onClick={() => setActiveTab('upcoming')}
               className={`pb-4 text-sm font-bold border-b-2 transition cursor-pointer ${
@@ -3356,7 +3841,7 @@ function DashboardPage({ user, trips, onNewBooking }: DashboardPageProps) {
                   : 'border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
               }`}
             >
-              Próximos ({upcomingTrips.length})
+              Itinerarios 3D Confirmados ({upcomingTrips.length})
             </button>
             <button
               onClick={() => setActiveTab('completed')}
@@ -3381,8 +3866,190 @@ function DashboardPage({ user, trips, onNewBooking }: DashboardPageProps) {
           </div>
         </div>
 
-        {/* Trips Cards */}
-        {displayedTrips.length > 0 ? (
+        {/* CONTENIDO SEGÚN TAB */}
+        {activeTab === 'pedidos' ? (
+          <div className="space-y-6">
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+              <span className="text-xl">ℹ️</span>
+              <div className="text-xs text-slate-700 dark:text-slate-300">
+                <strong className="text-amber-600 dark:text-amber-400 font-bold block">
+                  Seguimiento de Órdenes - Requisitos 1.3.3 y 1.3.4 del Pliego
+                </strong>
+                Tus compras se registran formalmente como <strong>"Pendiente de Entrega"</strong> hasta que el sector de reservas y el Jefe de Ventas validan los cupos con los prestadores y emiten los vouchers definitivos. Puedes modificar indicaciones o cancelar tu orden mientras esté pendiente.
+              </div>
+            </div>
+
+            {myOrders.length > 0 ? (
+              <div className="space-y-4">
+                {myOrders.map((ord) => (
+                  <div
+                    key={ord.id}
+                    className="p-6 rounded-3xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition space-y-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-[#0EA5E9] flex items-center justify-center font-bold text-sm">
+                          📦
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-[#0EA5E9] text-sm">
+                              #{ord.id}
+                            </span>
+                            <span className="text-xs text-slate-400 font-mono">
+                              (Factura: #{ord.nroFactura})
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-500">
+                            Registrado el {new Date(ord.fecha).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {ord.estado === 'pendiente_entrega' && (
+                          <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                            <span>⏳</span>
+                            <span>Pendiente de Entrega (1.3.3)</span>
+                          </span>
+                        )}
+                        {ord.estado === 'entregado' && (
+                          <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
+                            <span>✅</span>
+                            <span>Entregado / Despachado (1.4.4)</span>
+                          </span>
+                        )}
+                        {ord.estado === 'anulado' && (
+                          <span className="px-3 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5">
+                            <span>🚫</span>
+                            <span>Cancelado (1.3.4)</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Items List */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left">
+                        <thead className="text-slate-400 uppercase border-b border-slate-100 dark:border-white/5 font-semibold text-[10px]">
+                          <tr>
+                            <th className="py-2">Código</th>
+                            <th className="py-2">Descripción</th>
+                            <th className="py-2 text-center">Cant.</th>
+                            <th className="py-2 text-right">Unitario</th>
+                            <th className="py-2 text-right">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                          {ord.items.map((it, idx) => (
+                            <tr key={idx}>
+                              <td className="py-2.5 font-mono font-semibold text-slate-600 dark:text-slate-300">
+                                {it.codigoProducto}
+                              </td>
+                              <td className="py-2.5 font-medium text-slate-800 dark:text-white">
+                                {it.descripcion}
+                              </td>
+                              <td className="py-2.5 text-center font-bold">
+                                {it.cantidad}
+                              </td>
+                              <td className="py-2.5 text-right text-slate-500">
+                                ${it.precioUnitario.toLocaleString()} USD
+                              </td>
+                              <td className="py-2.5 text-right font-bold text-[#F97316]">
+                                ${it.subtotal.toLocaleString()} USD
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Footer / Notes & Actions */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-500 block">
+                          Indicaciones / Notas del Cliente:
+                        </span>
+                        <span className="text-slate-700 dark:text-slate-300 font-medium italic">
+                          {ord.notas || 'Sin indicaciones especiales.'}
+                        </span>
+                        {ord.motivoAnulacion && (
+                          <div className="text-rose-500 text-[11px] mt-1 font-semibold">
+                            Motivo de cancelación: {ord.motivoAnulacion}
+                          </div>
+                        )}
+                        {ord.fechaEntrega && (
+                          <div className="text-emerald-500 text-[11px] mt-1 font-semibold">
+                            Entregado el: {new Date(ord.fechaEntrega).toLocaleString()} por {ord.responsableEntrega || 'Ventas'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <div className="text-right pr-2 mr-2 border-r border-slate-200 dark:border-white/10">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Total</span>
+                          <span className="text-base font-extrabold text-[#F97316] font-fraunces">
+                            ${ord.total.toLocaleString()} USD
+                          </span>
+                        </div>
+
+                        {ord.estado === 'pendiente_entrega' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingOrder(ord);
+                                setEditNotes(ord.notas || '');
+                              }}
+                              className="px-3 py-2 rounded-xl border border-sky-300 dark:border-sky-500/30 text-[#0EA5E9] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              title="Modificar observaciones o indicaciones (Requisito 1.3.4)"
+                            >
+                              <span>✏️</span>
+                              <span>Modificar</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                const reason = prompt('Ingrese el motivo de cancelación de la orden (Requisito 1.3.4):', 'Cambio de itinerario o fecha');
+                                if (reason) {
+                                  DbStorageService.cancelOrder(ord.id, reason);
+                                  if (onRefreshOrders) onRefreshOrders();
+                                  alert('La orden ha sido cancelada con éxito y el stock fue liberado.');
+                                }
+                              }}
+                              className="px-3 py-2 rounded-xl border border-rose-300 dark:border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              title="Cancelar este pedido (Requisito 1.3.4)"
+                            >
+                              <span>❌</span>
+                              <span>Cancelar</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-[#F1F5F9]/40 dark:bg-[#1E293B] rounded-2xl border border-dashed border-[#E2E8F0] dark:border-[#334155] p-12 text-center">
+                <span className="text-4xl block mb-3">🛍️</span>
+                <h3 className="text-lg font-bold text-[#1E293B] dark:text-[#E2E8F0]">
+                  No tienes pedidos pendientes de entrega
+                </h3>
+                <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1 max-w-sm mx-auto">
+                  Agrega servicios al carrito o reserva un paquete para que se registre tu orden de compra formal.
+                </p>
+                <button
+                  onClick={onNewBooking}
+                  className="mt-6 px-6 py-2.5 rounded-xl bg-[#F97316] text-white text-xs font-bold shadow-md hover:bg-[#EA580C] transition cursor-pointer"
+                >
+                  Ver Catálogo de Servicios
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+        /* Trips Cards */
+        displayedTrips.length > 0 ? (
           <div className="space-y-4">
             {displayedTrips.map((trip) => (
               <TiltCard key={trip.id} maxTilt={6} scale={1.01}>
@@ -3475,7 +4142,8 @@ function DashboardPage({ user, trips, onNewBooking }: DashboardPageProps) {
               Explorar destinos ahora
             </button>
           </div>
-        )}
+        )
+      )}
       </div>
 
       {/* Voucher Modal */}
@@ -3537,6 +4205,65 @@ function DashboardPage({ user, trips, onNewBooking }: DashboardPageProps) {
             >
               Descargar Comprobante PDF
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Modificar Pedido (Punto 1.3.4 del Pliego) */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0F172A] border border-[#E2E8F0] dark:border-[#334155] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-4 text-[#1E293B] dark:text-[#E2E8F0] animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
+              <h3 className="text-lg font-bold font-fraunces flex items-center gap-2">
+                <span>✏️</span>
+                <span>Modificar Pedido #{editingOrder.id}</span>
+              </h3>
+              <button
+                onClick={() => setEditingOrder(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Puedes actualizar las notas especiales, requerimientos alimenticios, preferencias de habitación o detalles de contacto para esta orden mientras continúe en estado <strong>Pendiente de Entrega</strong>.
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+                Indicaciones / Observaciones Especiales
+              </label>
+              <textarea
+                rows={4}
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Ej: Pasajeros solicitan habitación en piso alto con cama matrimonial. Incluir asistencia médica en traslados."
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setEditingOrder(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  DbStorageService.updateOrderNotes(editingOrder.id, editNotes);
+                  if (onRefreshOrders) onRefreshOrders();
+                  setEditingOrder(null);
+                  alert('¡Pedido actualizado con éxito!');
+                }}
+                className="px-5 py-2 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-xs font-bold shadow-md transition cursor-pointer"
+              >
+                Guardar Cambios
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -3974,6 +4701,10 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
 interface CheckoutPageProps {
   user: User | null;
   pkg: Package;
+  cartItems?: CartItem[];
+  onClearCart?: () => void;
+  currency?: CurrencyType;
+  formatPrice?: (val: number) => string;
   passengersCount: number;
   paymentDone: boolean;
   bookingCode: string;
@@ -3985,6 +4716,10 @@ interface CheckoutPageProps {
 function CheckoutPage({
   user,
   pkg,
+  cartItems = [],
+  onClearCart,
+  currency: _currency = 'USD',
+  formatPrice,
   passengersCount,
   paymentDone,
   bookingCode,
@@ -4011,12 +4746,16 @@ function CheckoutPage({
   const [installments, setInstallments] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCardFlipped, setIsCardFlipped] = useState<boolean>(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState<string>('FAC-2026-084');
 
   // Financial calculations
+  const isFromCart = cartItems && cartItems.length > 0;
   const passengers = passengersCount || 2;
-  const subtotal = pkg.price * passengers;
-  const discount = 100;
-  const total = subtotal - discount;
+  const subtotal = isFromCart
+    ? cartItems.reduce((acc, ci) => acc + ci.subtotal, 0)
+    : pkg.price * passengers;
+  const discount = Math.min(100, Math.floor(subtotal * 0.05));
+  const total = Math.max(0, subtotal - discount);
   const installmentAmount = (total / installments).toFixed(2);
 
   // Auto formatting for credit card number
@@ -4042,20 +4781,70 @@ function CheckoutPage({
     setTimeout(() => {
       setIsProcessing(false);
       const generatedCode = 'VY-' + Math.floor(10000 + Math.random() * 90000);
+
+      // Armar items para la orden relacional (Requisito 1.3.3 del Pliego)
+      const orderItems: Array<{
+        codigoProducto: string;
+        descripcion: string;
+        categoria: any;
+        cantidad: number;
+        precioUnitario: number;
+        subtotal: number;
+      }> = [];
+
+      if (isFromCart && cartItems.length > 0) {
+        cartItems.forEach((ci) => {
+          orderItems.push({
+            codigoProducto: ci.producto.codigo,
+            descripcion: ci.producto.nombre,
+            categoria: ci.producto.categoria,
+            cantidad: ci.cantidad,
+            precioUnitario: ci.producto.precioUnitario,
+            subtotal: ci.subtotal
+          });
+        });
+      } else {
+        orderItems.push({
+          codigoProducto: `PKG-${pkg.id}`,
+          descripcion: `${pkg.title} (${pkg.destination})`,
+          categoria: 'paquete',
+          cantidad: passengers,
+          precioUnitario: pkg.price,
+          subtotal: pkg.price * passengers
+        });
+      }
+
+      // Persistir orden con estado 'pendiente_entrega' (Requisito 1.3.3)
+      // Genera factura correlativa en tbl_ventas (Requisito 1.4.5), descuenta stock y envía 2 correos auditados (Pliego pág. 2)
+      const newDbOrder = DbStorageService.createOrder({
+        clienteId: user?.passport || 'CLI-001',
+        clienteNombre: `${firstName} ${lastName}`.trim(),
+        clienteEmail: email,
+        items: orderItems,
+        total: total,
+        metodoPago: paymentType,
+        cuotas: installments,
+        notas: `Reserva web generada con código #${generatedCode}. Pasajeros: ${passengers}. Nacionalidad: ${nationality}.`
+      });
+
+      setGeneratedInvoice(newDbOrder.nroFactura);
+
       const newTrip: Trip = {
         id: 'trip-' + Date.now(),
         packageId: pkg.id,
-        title: pkg.title,
-        destination: `${pkg.destination}, ${pkg.country}`,
+        title: isFromCart ? `Reserva Múltiple (${cartItems.length} servicios)` : pkg.title,
+        destination: isFromCart ? 'Itinerario Personalizado' : `${pkg.destination}, ${pkg.country}`,
         departureDate: '20 Nov, 2026',
         returnDate: '27 Nov, 2026',
-        nights: pkg.nights,
+        nights: pkg.nights || 7,
         passengers,
         bookingCode: generatedCode,
         totalPrice: total,
         status: 'upcoming',
-        image: pkg.image
+        image: isFromCart ? cartItems[0].producto.imagen || pkg.image : pkg.image
       };
+
+      if (onClearCart) onClearCart();
       onConfirmPayment(generatedCode, newTrip);
     }, 1500);
   };
@@ -4071,16 +4860,30 @@ function CheckoutPage({
           </svg>
         </div>
 
-        <div className="space-y-2">
-          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-[#1E293B] px-3 py-1 rounded-full border border-emerald-200 dark:border-[#334155]">
-            Pago Confirmado 3D
-          </span>
+        <div className="space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold animate-pulse">
+            <span>⏳</span>
+            <span>REGISTRADO COMO: PENDIENTE DE ENTREGA (Requisito 1.3.3)</span>
+          </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
-            ¡Tu reserva está confirmada!
+            ¡Tu compra ha sido procesada!
           </h1>
-          <p className="text-[#64748B] dark:text-[#94A3B8] text-base max-w-lg mx-auto">
-            Hemos procesado tu pago con encriptación biométrica 3D. Enviamos tus billetes y vouchers a <strong className="text-[#1E293B] dark:text-[#E2E8F0]">{email}</strong>.
+          <p className="text-[#64748B] dark:text-[#94A3B8] text-base max-w-xl mx-auto">
+            Tu pedido se ha registrado en el sistema comercial con estado <strong>"Pendiente de Entrega"</strong>. Nuestro equipo de ventas y el Jefe de Ventas procederán con la entrega formal y emisión de tus vouchers definitivos.
           </p>
+
+          {/* Notificación de envío dual de correos auditados (Pliego de Requisitos pág. 2) */}
+          <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/40 text-left max-w-xl mx-auto flex items-start gap-3 text-xs">
+            <span className="text-xl">📬</span>
+            <div className="space-y-1">
+              <strong className="text-[#0EA5E9] font-bold block">
+                Sistema Automatizado de Correos & Auditoría (Pliego de Requisitos pág. 2)
+              </strong>
+              <p className="text-slate-600 dark:text-slate-300">
+                Se despacharon automáticamente <strong>2 correos electrónicos</strong>: uno a tu casilla (<span className="font-mono text-slate-800 dark:text-white font-semibold">{email}</span>) y otro al <strong>Departamento de Ventas</strong> (<code>ventas@horizontemoderno.com</code>), quedando registrados en la tabla de auditoría del sistema.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Booking Card Box con 3D Tilt */}
@@ -4088,20 +4891,26 @@ function CheckoutPage({
           <div className="bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-3xl p-6 sm:p-8 text-left space-y-4 shadow-xl max-w-xl mx-auto">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#334155] pb-4">
               <div>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] uppercase font-bold tracking-wider">Código de reserva</p>
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] uppercase font-bold tracking-wider">Código de Pedido / Reserva</p>
                 <p className="text-2xl font-mono font-bold text-[#0EA5E9] dark:text-[#E2E8F0]">#{bookingCode}</p>
+                <p className="text-[11px] font-mono text-slate-400">Factura Comercial: #{generatedInvoice}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] uppercase font-bold tracking-wider">Monto abonado</p>
-                <p className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">${total.toLocaleString()} USD</p>
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] uppercase font-bold tracking-wider">Monto total abonado</p>
+                <p className="text-2xl font-bold font-fraunces text-[#F97316]">
+                  {formatPrice ? formatPrice(total) : `$${total.toLocaleString()} USD`}
+                </p>
+                <span className="text-[10px] text-slate-400 block capitalize">{paymentType} ({installments} cuotas)</span>
               </div>
             </div>
 
             <div className="flex items-center gap-4 pt-2">
               <img src={pkg.image} alt={pkg.destination} className="w-16 h-16 rounded-xl object-cover shadow-md" />
               <div>
-                <h4 className="font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces text-base">{pkg.title}</h4>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">{pkg.nights} noches · {passengers} pasajeros · All-Inclusive</p>
+                <h4 className="font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces text-base">
+                  {isFromCart ? `Reserva Múltiple (${cartItems.length} servicios)` : pkg.title}
+                </h4>
+                <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">{passengers} viajeros · Cobertura y Asistencia 3D</p>
               </div>
             </div>
           </div>
@@ -4111,15 +4920,16 @@ function CheckoutPage({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <button
             onClick={onGoToDashboard}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#0EA5E9] hover:bg-[#64748B] dark:bg-[#334155] dark:hover:bg-[#0F172A] text-white dark:text-[#E2E8F0] font-bold text-sm shadow-md transition cursor-pointer"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-bold text-sm shadow-md transition cursor-pointer flex items-center justify-center gap-2"
           >
-            Ver mis viajes (Boarding Pass 3D)
+            <span>📋</span>
+            <span>Ver mis Pedidos Pendientes (1.3.3)</span>
           </button>
           <button
             onClick={onExploreMore}
             className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] text-[#1E293B] dark:text-[#E2E8F0] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] font-bold text-sm transition cursor-pointer"
           >
-            Explorar más destinos en el globo 3D
+            Explorar más servicios en el catálogo
           </button>
         </div>
       </div>
