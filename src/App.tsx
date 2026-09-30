@@ -463,67 +463,10 @@ interface TiltCardProps {
   scale?: number;
 }
 
-function TiltCard({ children, className = '', maxTilt = 12, scale = 1.02 }: TiltCardProps) {
-  const [tilt, setTilt] = useState<{ x: number; y: number; glareX: number; glareY: number; isHovered: boolean }>({
-    x: 0,
-    y: 0,
-    glareX: 50,
-    glareY: 50,
-    isHovered: false
-  });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const rotX = -((y - centerY) / centerY) * maxTilt;
-    const rotY = ((x - centerX) / centerX) * maxTilt;
-
-    setTilt({
-      x: rotX,
-      y: rotY,
-      glareX: (x / rect.width) * 100,
-      glareY: (y / rect.height) * 100,
-      isHovered: true
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt((prev) => ({ ...prev, x: 0, y: 0, isHovered: false }));
-  };
-
+function TiltCard({ children, className = '' }: TiltCardProps) {
   return (
-    <div
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={`perspective-1000 ${className}`}
-    >
-      <div
-        style={{
-          transform: tilt.isHovered
-            ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(${scale}, ${scale}, ${scale})`
-            : 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-          transition: tilt.isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out',
-          transformStyle: 'preserve-3d'
-        }}
-        className="relative w-full h-full"
-      >
-        {children}
-
-        {/* Specular 3D Reflection / Glare */}
-        {tilt.isHovered && (
-          <div
-            className="absolute inset-0 pointer-events-none rounded-2xl z-30 transition-opacity duration-300"
-            style={{
-              background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255, 255, 255, 0.22) 0%, transparent 60%)`,
-              mixBlendMode: 'overlay'
-            }}
-          />
-        )}
-      </div>
+    <div className={`transition-all duration-200 ${className}`}>
+      {children}
     </div>
   );
 }
@@ -831,127 +774,101 @@ interface Card3DProps {
 }
 
 function Card3D({ cardNumber, cardHolder, expiry, cvv, isFlipped, onFlipToggle }: Card3DProps) {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotX = -((y - rect.height / 2) / rect.height) * 14;
-    const rotY = ((x - rect.width / 2) / rect.width) * 14;
-    setTilt({ x: rotX, y: rotY });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-  };
-
   return (
     <div className="flex flex-col items-center gap-3">
       <div
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        className="w-full max-w-sm h-52 perspective-1500 cursor-pointer select-none"
+        className="w-full max-w-sm h-52 perspective-1000 cursor-pointer select-none"
         onClick={onFlipToggle}
-        title="Haz clic para voltear la tarjeta en 3D"
+        title="Haz clic para voltear la tarjeta"
       >
         <div
           style={{
-            transform: isFlipped
-              ? `rotateY(180deg)`
-              : `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            transition: 'transform 0.5s ease-out'
           }}
-          className="relative w-full h-full preserve-3d shadow-2xl rounded-2xl"
+          className="relative w-full h-full preserve-3d rounded-xl shadow-md"
         >
-          {/* FRONT FACE OF 3D CARD */}
-          <div className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-tr from-[#0F172A] via-[#1E293B] to-[#0EA5E9] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0284C7] p-6 text-white shadow-2xl flex flex-col justify-between overflow-hidden border border-[#E2E8F0] dark:border-[#94A3B8]/40">
-            <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/10 dark:bg-[#94A3B8]/10 rounded-full blur-xl" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#F97316]/20 rounded-full blur-2xl" />
-
+          {/* FRONT FACE OF CARD */}
+          <div className="absolute inset-0 backface-hidden rounded-xl bg-slate-900 p-6 text-white flex flex-col justify-between overflow-hidden border border-slate-700">
             <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-2">
-                {/* 3D Metallic EMV Chip */}
-                <div className="w-11 h-8 rounded-md bg-gradient-to-br from-amber-200 via-amber-300 to-amber-500 p-1 flex items-center justify-center shadow-md border border-amber-600/30">
-                  <div className="w-full h-full border border-amber-800/40 rounded-xs flex flex-col justify-between">
-                    <div className="border-b border-amber-800/40 h-1/2" />
+              <div className="flex items-center gap-2.5">
+                {/* Clean EMV Chip */}
+                <div className="w-10 h-7 rounded-sm bg-amber-400/90 p-1 flex items-center justify-center border border-amber-600/40">
+                  <div className="w-full h-full border border-amber-900/30 rounded-2xs flex flex-col justify-between">
+                    <div className="border-b border-amber-900/30 h-1/2" />
                   </div>
                 </div>
-                <span className="text-[10px] tracking-widest text-[#F1F5F9] dark:text-[#94A3B8] uppercase font-bold">
-                  Horizonte Moderno 3D Pay
+                <span className="text-[11px] tracking-wider text-slate-400 uppercase font-medium">
+                  Horizonte Pay
                 </span>
               </div>
-              <span className="text-xl font-black italic tracking-wider text-white dark:text-[#E2E8F0]">VISA</span>
+              <span className="text-lg font-bold tracking-wider text-white">VISA</span>
             </div>
 
             <div className="relative z-10">
-              <span className="text-[10px] text-[#E2E8F0] dark:text-[#94A3B8] uppercase tracking-widest block mb-0.5">
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
                 Número de tarjeta
               </span>
-              <p className="text-lg sm:text-xl font-mono tracking-widest text-white dark:text-[#E2E8F0] drop-shadow-sm font-semibold">
+              <p className="text-lg font-mono tracking-widest text-white font-medium">
                 {cardNumber || '•••• •••• •••• ••••'}
               </p>
             </div>
 
             <div className="flex items-center justify-between relative z-10 text-xs">
               <div>
-                <span className="text-[9px] text-[#E2E8F0] dark:text-[#94A3B8] uppercase tracking-widest block">Titular</span>
-                <p className="font-bold tracking-wider truncate max-w-[180px] text-white dark:text-[#E2E8F0]">
+                <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Titular</span>
+                <p className="font-semibold tracking-wide truncate max-w-[180px] text-slate-100">
                   {cardHolder || 'NOMBRE APELLIDO'}
                 </p>
               </div>
               <div>
-                <span className="text-[9px] text-[#E2E8F0] dark:text-[#94A3B8] uppercase tracking-widest block">Vence</span>
-                <p className="font-mono font-bold text-white dark:text-[#E2E8F0]">{expiry || 'MM/AA'}</p>
+                <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Vence</span>
+                <p className="font-mono font-semibold text-slate-100">{expiry || 'MM/AA'}</p>
               </div>
             </div>
           </div>
 
-          {/* BACK FACE OF 3D CARD */}
+          {/* BACK FACE OF CARD */}
           <div
             style={{ transform: 'rotateY(180deg)' }}
-            className="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-tr from-[#475569] via-[#64748B] to-[#0EA5E9] dark:from-[#0F172A] dark:via-[#0F172A] dark:to-[#1E293B] py-6 text-white shadow-2xl flex flex-col justify-between overflow-hidden border border-[#E2E8F0] dark:border-[#334155]"
+            className="absolute inset-0 backface-hidden rounded-xl bg-slate-900 py-5 text-white flex flex-col justify-between overflow-hidden border border-slate-700"
           >
             {/* Magnetic Stripe */}
-            <div className="w-full h-11 bg-black/85 shadow-inner" />
+            <div className="w-full h-10 bg-black/90" />
 
             {/* Signature & CVV Panel */}
             <div className="px-6 space-y-2">
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-9 bg-white/90 rounded-sm flex items-center justify-end px-3">
-                  <span className="font-mono font-bold text-slate-800 text-sm tracking-wider">
+                <div className="flex-1 h-8 bg-slate-100 rounded-xs flex items-center justify-end px-3">
+                  <span className="font-mono font-bold text-slate-900 text-xs tracking-wider">
                     {cvv ? `CVV: ${cvv}` : 'CVV: •••'}
                   </span>
                 </div>
-                {/* 3D Hologram Security Stamp */}
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-pink-400 via-amber-300 to-cyan-400 shadow-sm flex items-center justify-center text-[8px] font-black text-slate-900 border border-white/50">
-                  3D
-                </div>
               </div>
 
-              <p className="text-[9px] text-[#F1F5F9] dark:text-[#94A3B8] leading-tight">
-                Esta tarjeta está encriptada con tecnología 3D-Secure de Horizonte Moderno. No compartas tu código de seguridad con terceros.
+              <p className="text-[9px] text-slate-400 leading-tight">
+                Transacción segura encriptada. No compartas tu código CVV.
               </p>
             </div>
 
-            <div className="px-6 flex justify-between items-center text-[10px] text-[#E2E8F0] dark:text-[#94A3B8]">
-              <span>Servicio al cliente 24/7: 0800-HORIZONTE</span>
-              <span className="font-mono font-bold">EMV-3D</span>
+            <div className="px-6 flex justify-between items-center text-[10px] text-slate-400">
+              <span>Soporte: 0800-HORIZONTE</span>
+              <span className="font-mono font-medium">EMV</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Button to flip 3D card */}
+      {/* Button to flip card */}
       <button
         type="button"
         onClick={onFlipToggle}
-        className="px-4 py-1.5 rounded-full text-xs font-semibold border border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9] dark:hover:bg-[#334155] transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+        className="px-3 py-1 rounded-md text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5"
       >
-        <svg className="w-3.5 h-3.5 transform transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        <span>{isFlipped ? 'Ver frente de tarjeta' : 'Girar tarjeta para ver reverso (CVV) 3D'}</span>
+        <span>{isFlipped ? 'Ver frente' : 'Girar para ver reverso (CVV)'}</span>
       </button>
     </div>
   );
@@ -962,102 +879,94 @@ function Card3D({ cardNumber, cardHolder, expiry, cvv, isFlipped, onFlipToggle }
 // =========================================================
 function BoardingPass3D({ trip, user }: { trip: Trip; user: User }) {
   return (
-    <TiltCard maxTilt={15} scale={1.03} className="w-full">
-      <div className="relative rounded-3xl bg-gradient-to-r from-white via-white to-[#F8FAFC] dark:from-[#1E293B] dark:via-[#1E293B] dark:to-[#0F172A] border border-[#E2E8F0] dark:border-[#334155] p-6 sm:p-8 shadow-2xl overflow-hidden preserve-3d">
-        {/* Holographic 3D Foil Badge */}
-        <div
-          style={{ transform: 'translateZ(35px)' }}
-          className="absolute -top-3 -right-3 w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 via-emerald-300 to-teal-400 opacity-90 blur-xs flex items-center justify-center shadow-lg"
-        />
-        <div
-          style={{ transform: 'translateZ(40px)' }}
-          className="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border border-[#E2E8F0] dark:border-[#334155] text-[10px] font-black tracking-widest text-[#F97316] uppercase shadow-sm"
-        >
-          ★ BOARDING PASS 3D
-        </div>
-
-        <div className="space-y-6" style={{ transform: 'translateZ(25px)' }}>
-          {/* Header */}
+    <div className="w-full">
+      <div className="relative rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0EA5E9] to-[#F97316] dark:from-[#334155] dark:to-[#94A3B8] flex items-center justify-center text-white shadow-md">
-              ✈️
+            <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-400 flex items-center justify-center font-bold text-sm border border-sky-100 dark:border-sky-900/40">
+              ✈
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold text-[#64748B] dark:text-[#94A3B8] tracking-wider">
+              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">
                 Vuelo Internacional Confirmado
               </span>
-              <h3 className="text-xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {trip.title}
               </h3>
             </div>
           </div>
+          <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-mono font-semibold">
+            TARJETA DE EMBARQUE
+          </span>
+        </div>
 
+        <div className="space-y-5">
           {/* Route Graphic */}
-          <div className="flex items-center justify-between py-3 border-y border-dashed border-[#E2E8F0] dark:border-[#334155]">
+          <div className="flex items-center justify-between py-3 border-y border-dashed border-slate-200 dark:border-slate-800">
             <div className="text-left">
-              <span className="text-2xl font-black font-fraunces text-[#0EA5E9] dark:text-[#E2E8F0]">ORIG</span>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">Vuelo de Salida</p>
-              <p className="text-[11px] font-semibold text-[#1E293B] dark:text-white">{trip.departureDate}</p>
+              <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">ORIG</span>
+              <p className="text-xs text-slate-500">Salida</p>
+              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mt-0.5">{trip.departureDate}</p>
             </div>
 
             <div className="flex-1 flex flex-col items-center px-4">
-              <div className="w-full flex items-center justify-center gap-2 text-xs text-[#F97316]">
-                <div className="flex-1 border-t border-dashed border-[#F97316]" />
-                <span>✈️ {trip.nights} Noches</span>
-                <div className="flex-1 border-t border-dashed border-[#F97316]" />
+              <div className="w-full flex items-center justify-center gap-2 text-xs text-slate-500">
+                <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+                <span className="font-medium text-[11px] text-[#0284C7] dark:text-sky-400">✈ {trip.nights} Noches</span>
+                <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
               </div>
-              <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] mt-1 font-mono">NON-STOP CLASS</span>
+              <span className="text-[10px] text-slate-400 mt-1 font-mono uppercase">Directo · Clase Turista</span>
             </div>
 
             <div className="text-right">
-              <span className="text-2xl font-black font-fraunces text-[#0EA5E9] dark:text-[#E2E8F0]">DEST</span>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">{trip.destination}</p>
-              <p className="text-[11px] font-semibold text-[#1E293B] dark:text-white">{trip.returnDate}</p>
+              <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">DEST</span>
+              <p className="text-xs text-slate-500">{trip.destination}</p>
+              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mt-0.5">{trip.returnDate}</p>
             </div>
           </div>
 
           {/* Passenger & Booking Code */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
             <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] block">Pasajero</span>
-              <span className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">{user.name} {user.lastName}</span>
+              <span className="text-[10px] uppercase text-slate-400 block font-medium">Pasajero</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{user.name} {user.lastName}</span>
             </div>
             <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] block">Pasaporte</span>
-              <span className="font-mono font-bold text-[#1E293B] dark:text-[#E2E8F0]">{user.passport}</span>
+              <span className="text-[10px] uppercase text-slate-400 block font-medium">Pasaporte</span>
+              <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{user.passport}</span>
             </div>
             <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] block">Reserva</span>
-              <span className="font-mono font-bold text-[#F97316]">#{trip.bookingCode}</span>
+              <span className="text-[10px] uppercase text-slate-400 block font-medium">Reserva</span>
+              <span className="font-mono font-bold text-[#EA580C]">#{trip.bookingCode}</span>
             </div>
             <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] block">Asiento / Gate</span>
-              <span className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">12A · Puerta 4B</span>
+              <span className="text-[10px] uppercase text-slate-400 block font-medium">Asiento / Puerta</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">12A · Puerta 4B</span>
             </div>
           </div>
 
           {/* Barcode Strip */}
-          <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-[#334155]">
-            <div className="flex gap-1 h-8 items-center opacity-70">
-              <div className="w-1 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-2 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-0.5 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-1.5 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-3 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-1 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-0.5 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-2 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-1.5 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-0.5 h-full bg-slate-800 dark:bg-white" />
-              <div className="w-2 h-full bg-slate-800 dark:bg-white" />
+          <div className="pt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+            <div className="flex gap-1 h-7 items-center opacity-70">
+              <div className="w-1 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-2 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-0.5 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-1.5 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-3 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-1 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-0.5 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-2 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-1.5 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-0.5 h-full bg-slate-800 dark:bg-slate-300" />
+              <div className="w-2 h-full bg-slate-800 dark:bg-slate-300" />
             </div>
-            <span className="text-[10px] font-mono text-[#64748B] dark:text-[#94A3B8]">
-              VERIFICADO ELECTRÓNICAMENTE · HORIZONTE MODERNO 3D
+            <span className="text-[10px] font-mono text-slate-400">
+              VERIFICADO ELECTRÓNICAMENTE · HORIZONTE MODERNO
             </span>
           </div>
         </div>
       </div>
-    </TiltCard>
+    </div>
   );
 }
 
@@ -1259,47 +1168,82 @@ export default function App() {
       )}
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 bg-[#F8FAFC]/95 dark:bg-[#0F172A]/95 backdrop-blur-md border-b border-[#E2E8F0] dark:border-[#334155] shadow-xs transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          {/* Logo con Micro-Tilt 3D */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          {/* Logo */}
           <button
             onClick={() => navigateTo('home')}
-            className="flex items-center gap-2 group text-left cursor-pointer focus:outline-hidden"
+            className="flex items-center gap-2.5 text-left cursor-pointer focus:outline-hidden"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0EA5E9] to-[#64748B] dark:from-[#334155] dark:to-[#94A3B8] flex items-center justify-center text-white shadow-lg shadow-emerald-950/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <svg className="w-6 h-6 transform -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            <div className="w-8 h-8 rounded-lg bg-[#0284C7] flex items-center justify-center text-white font-bold shadow-xs">
+              <svg className="w-4 h-4 transform -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-2xl font-black tracking-tight font-fraunces">
-                <span className="text-[#1E293B] dark:text-[#E2E8F0]">Horizonte</span><span className="text-[#0EA5E9] ml-1">Moderno</span>
-                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-sm bg-[#F97316]/20 text-[#F97316] font-sans font-bold">3D</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+                Horizonte<span className="text-[#0284C7] ml-0.5">Moderno</span>
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#64748B] dark:text-[#94A3B8]">
-                Turismo & Experiencias
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                Plataforma Turística
               </span>
             </div>
           </button>
 
           {/* Desktop Navigation Links & Controls */}
-            {/* CURRENCY SELECTOR */}
-            <div className="relative flex items-center">
-              <select
-                value={currency}
-                onChange={(e) => {
-                  soundFx.playClick();
-                  setCurrency(e.target.value as CurrencyType);
-                }}
-                className="bg-white dark:bg-slate-800 text-[#1E293B] dark:text-[#E2E8F0] border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-bold cursor-pointer hover:border-[#0EA5E9] focus:outline-hidden transition shadow-xs"
-                title="Cambiar divisa"
+          <div className="hidden md:flex items-center gap-3">
+            <nav className="flex items-center gap-4 mr-2">
+              <button
+                onClick={() => navigateTo('home')}
+                className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
+                  page === 'home'
+                    ? 'text-[#0284C7] dark:text-sky-400 font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
               >
-                <option value="USD">🇺🇸 USD ($)</option>
-                <option value="EUR">🇪🇺 EUR (€)</option>
-                <option value="ARS">🇦🇷 ARS ($)</option>
-                <option value="MXN">🇲🇽 MXN ($)</option>
-              </select>
-            </div>
+                Catálogo
+              </button>
+
+              {user && (
+                <button
+                  onClick={() => navigateTo('dashboard')}
+                  className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    page === 'dashboard'
+                      ? 'text-[#0284C7] dark:text-sky-400 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Mis Viajes
+                </button>
+              )}
+            </nav>
+
+            {/* CURRENCY SELECTOR */}
+            <select
+              value={currency}
+              onChange={(e) => {
+                soundFx.playClick();
+                setCurrency(e.target.value as CurrencyType);
+              }}
+              className="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:border-slate-300 focus:outline-hidden"
+              title="Cambiar divisa"
+            >
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="ARS">ARS ($)</option>
+              <option value="MXN">MXN ($)</option>
+            </select>
+
+            {/* THEME TOGGLE */}
+            <button
+              onClick={toggleTheme}
+              aria-label="Cambiar tema de color"
+              className="p-1.5 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-xs font-medium flex items-center gap-1.5"
+              title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
+              <span>{isDarkMode ? '☀️' : '🌙'}</span>
+              <span className="hidden lg:inline">{isDarkMode ? 'Claro' : 'Oscuro'}</span>
+            </button>
 
             {/* SOUND AMBIENCE TOGGLE */}
             <button
@@ -1308,140 +1252,77 @@ export default function App() {
                 setSoundAmbience(next);
                 soundFx.toggleOceanWaves(next);
               }}
-              className={`p-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center gap-2 text-xs font-bold shadow-xs active:scale-95 ${
+              className={`p-1.5 px-2.5 rounded-md border transition cursor-pointer flex items-center gap-1.5 text-xs font-medium ${
                 soundAmbience
-                  ? 'bg-sky-500/10 border-sky-500 text-[#0EA5E9]'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400'
+                  ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-800 text-[#0284C7]'
+                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
               }`}
-              title="Alternar sonido ambiental de olas de playa 3D"
+              title="Sonido ambiental de fondo"
             >
-              {soundAmbience ? (
-                <>
-                  <div className="flex items-end gap-0.5 h-3">
-                    <span className="w-1 bg-[#0EA5E9] rounded-full eq-bar-1" />
-                    <span className="w-1 bg-[#0EA5E9] rounded-full eq-bar-2" />
-                    <span className="w-1 bg-[#0EA5E9] rounded-full eq-bar-3" />
-                  </div>
-                  <span className="text-xs">Olas 3D</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-xs">🔇</span>
-                  <span className="text-xs">Sonido</span>
-                </>
-              )}
-            </button>
-          <nav className="hidden md:flex items-center gap-5">
-            <button
-              onClick={() => navigateTo('home')}
-              className={`text-sm font-medium transition-colors cursor-pointer ${
-                page === 'home'
-                  ? 'text-[#0EA5E9] dark:text-[#E2E8F0] font-bold'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
-              }`}
-            >
-              Explorar Paquetes
-            </button>
-
-            {/* THEME TOGGLE BUTTON */}
-            <button
-              onClick={toggleTheme}
-              aria-label="Cambiar tema de color"
-              className="relative p-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center gap-2 text-xs font-bold
-                bg-white border-[#E2E8F0] text-[#0EA5E9] hover:bg-[#F1F5F9]
-                dark:bg-[#1E293B] dark:border-[#334155] dark:text-[#E2E8F0] dark:hover:bg-[#334155] shadow-xs active:scale-95"
-              title={isDarkMode ? 'Modo Oscuro Activo. Clic para cambiar a Modo Claro' : 'Modo Claro Activo. Clic para cambiar a Modo Oscuro'}
-            >
-              {isDarkMode ? (
-                <>
-                  <span className="text-amber-300 text-sm">☀️</span>
-                  <span className="text-xs">Modo Claro</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-[#0EA5E9] text-sm">🌙</span>
-                  <span className="text-xs">Modo Oscuro</span>
-                </>
-              )}
+              <span>{soundAmbience ? '🔊' : '🔈'}</span>
+              <span className="hidden lg:inline">Sonido</span>
             </button>
 
             {/* PALETTE INSPECTOR BUTTON */}
             <button
               onClick={() => setShowPaletteModal(true)}
-              className="px-2.5 py-1.5 rounded-xl border border-[#38BDF8] dark:border-[#334155] text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] transition cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title="Ver paletas de colores UX/UI"
+              className="p-1.5 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-xs font-medium flex items-center gap-1.5"
+              title="Ver guía de diseño y paleta de colores"
             >
-              <span className="w-2.5 h-2.5 rounded-full bg-[#64748B] dark:bg-[#94A3B8] inline-block" />
-              <span>Paleta UX/UI</span>
+              <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
+              <span className="hidden lg:inline">Paleta</span>
             </button>
 
-            {/* 🛒 BOTÓN CARRITO DE COMPRAS (ENCARGO PRINCIPAL) */}
+            {/* 🛒 BOTÓN CARRITO DE COMPRAS */}
             <button
               onClick={() => {
                 soundFx.playClick();
                 setIsCartOpen(true);
               }}
-              className="relative px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-[#1E293B] dark:text-[#E2E8F0] hover:border-[#0EA5E9] transition cursor-pointer flex items-center gap-2 shadow-xs"
-              title="Ver Carrito de Compras (Olimpiadas IPP)"
+              className="relative p-1.5 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-[#0284C7] transition cursor-pointer flex items-center gap-1.5"
+              title="Carrito de compras"
             >
-              <div className="relative flex items-center">
-                <svg className="w-4 h-4 text-[#0EA5E9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                {cartItems.reduce((acc, it) => acc + it.cantidad, 0) > 0 && (
-                  <span className="absolute -top-2.5 -right-3 px-1.5 py-0.2 rounded-full bg-[#F97316] text-white text-[10px] font-bold shadow-md">
-                    {cartItems.reduce((acc, it) => acc + it.cantidad, 0)}
-                  </span>
-                )}
-              </div>
-              <span className="text-xs font-bold hidden sm:inline">Carrito</span>
+              <svg className="w-4 h-4 text-[#0284C7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="text-xs font-semibold">Carrito</span>
+              {cartItems.reduce((acc, it) => acc + it.cantidad, 0) > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-[#EA580C] text-white text-[10px] font-bold">
+                  {cartItems.reduce((acc, it) => acc + it.cantidad, 0)}
+                </span>
+              )}
             </button>
 
-            {/* 👔 ACCESO DIRECTO AL PANEL DE VENTAS (ADMIN 1.4) */}
+            {/* 👔 ACCESO AL PANEL DE VENTAS */}
             <button
               onClick={() => {
                 soundFx.playClick();
                 navigateTo('sales_admin');
               }}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+              className={`p-1.5 px-2.5 rounded-md border text-xs font-medium transition flex items-center gap-1.5 cursor-pointer ${
                 page === 'sales_admin'
-                  ? 'bg-[#0EA5E9] text-white border-[#0EA5E9]'
-                  : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-[#0EA5E9]'
+                  ? 'bg-[#0284C7] text-white border-[#0284C7]'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-[#0284C7]'
               }`}
-              title="Panel del Jefe de Ventas (Punto 1.4 del PDF)"
+              title="Panel del Jefe de Ventas (Punto 1.4)"
             >
-              <span>👔</span>
-              <span className="hidden xl:inline">Panel Ventas</span>
+              <span>Ventas</span>
             </button>
 
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
             {user ? (
-              <>
-                <button
-                  onClick={() => navigateTo('dashboard')}
-                  className={`text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
-                    page === 'dashboard'
-                      ? 'text-[#0EA5E9] dark:text-[#E2E8F0] font-bold'
-                      : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                  Mis Viajes
-                </button>
-
-                <div className="h-6 w-px bg-[#E2E8F0] dark:bg-[#334155]" />
-
-                {/* Profile Pill */}
+              <div className="flex items-center gap-2">
+                {/* Profile Button */}
                 <button
                   onClick={() => navigateTo('profile')}
-                  className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] transition border border-[#E2E8F0] dark:border-[#334155] cursor-pointer"
+                  className="flex items-center gap-2 px-2.5 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition border border-slate-200 dark:border-slate-700 cursor-pointer"
                   title="Mi Perfil"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0EA5E9] to-[#F97316] dark:from-[#334155] dark:to-[#94A3B8] text-white font-semibold text-xs flex items-center justify-center shadow-xs">
+                  <div className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] font-semibold flex items-center justify-center">
                     {user.avatarInitials}
                   </div>
-                  <span className="text-sm font-medium text-[#1E293B] dark:text-[#E2E8F0] max-w-[120px] truncate">
+                  <span className="text-xs font-medium text-slate-800 dark:text-slate-200 max-w-[100px] truncate">
                     {user.name}
                   </span>
                 </button>
@@ -1453,53 +1334,60 @@ export default function App() {
                     showToast('Has cerrado sesión correctamente');
                     navigateTo('home');
                   }}
-                  className="text-xs font-semibold text-slate-500 hover:text-red-500 transition cursor-pointer flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30"
+                  className="text-xs text-slate-500 hover:text-red-500 transition cursor-pointer p-1.5"
+                  title="Cerrar sesión"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
                   Salir
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigateTo('login')}
-                  className="text-sm font-semibold text-[#475569] dark:text-[#94A3B8] hover:text-[#0EA5E9] dark:hover:text-white transition cursor-pointer"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-[#0284C7] transition cursor-pointer px-2 py-1"
                 >
-                  Iniciar Sesión
+                  Ingresar
                 </button>
                 <button
                   onClick={() => navigateTo('register')}
-                  className="px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-sm shadow-md shadow-orange-500/20 transition-all hover:shadow-lg active:scale-98 cursor-pointer"
+                  className="px-3 py-1.5 rounded-md bg-[#EA580C] hover:bg-[#C2410C] text-white font-medium text-xs transition-colors cursor-pointer"
                 >
-                  Crear Cuenta
+                  Registrarse
                 </button>
-              </>
+              </div>
             )}
-          </nav>
+          </div>
 
           {/* Mobile Actions Button */}
           <div className="flex items-center gap-2 md:hidden">
             <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#1E293B] text-sm"
-              aria-label="Cambiar tema"
+              onClick={() => {
+                soundFx.playClick();
+                setIsCartOpen(true);
+              }}
+              className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 relative"
             >
-              {isDarkMode ? '☀️' : '🌙'}
+              <svg className="w-4 h-4 text-[#0284C7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {cartItems.reduce((acc, it) => acc + it.cantidad, 0) > 0 && (
+                <span className="absolute -top-1 -right-1 px-1 rounded-full bg-[#EA580C] text-white text-[9px] font-bold">
+                  {cartItems.reduce((acc, it) => acc + it.cantidad, 0)}
+                </span>
+              )}
             </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-[#1E293B] dark:text-[#E2E8F0] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] transition cursor-pointer"
+              className="p-1.5 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               aria-label="Abrir menú"
             >
               {mobileMenuOpen ? (
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
@@ -1966,80 +1854,7 @@ interface HomePageProps {
 }
 
 
-// ==========================================
-// 🎊 COMPONENTE 3D: CONFETTI PARTICLES CANNON
-// ==========================================
-function ConfettiCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const colors = ['#0EA5E9', '#F97316', '#38BDF8', '#10B981', '#F59E0B', '#EC4899', '#A855F7'];
-    const particles: Array<{
-      x: number;
-      y: number;
-      size: number;
-      color: string;
-      speedX: number;
-      speedY: number;
-      rotation: number;
-      rotationSpeed: number;
-    }> = [];
-
-    for (let i = 0; i < 150; i++) {
-      particles.push({
-        x: canvas.width / 2 + (Math.random() * 260 - 130),
-        y: canvas.height * 0.45 + (Math.random() * 120 - 60),
-        size: Math.random() * 8 + 5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        speedX: (Math.random() - 0.5) * 18,
-        speedY: (Math.random() - 0.9) * 20,
-        rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 10,
-      });
-    }
-
-    let animationId: number;
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.speedY += 0.38;
-        p.rotation += p.rotationSpeed;
-        p.speedX *= 0.98;
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate((p.rotation * Math.PI) / 180);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-        ctx.restore();
-      });
-
-      animationId = requestAnimationFrame(render);
-    };
-
-    render();
-    const timeout = setTimeout(() => {
-      cancelAnimationFrame(animationId);
-    }, 6000);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      clearTimeout(timeout);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-50 w-full h-full" />;
-}
 
 // ==========================================
 // 🏨 COMPONENTE 3D: DETALLE DE PAQUETE & ITINERARIO
@@ -2248,70 +2063,66 @@ function PackageDetailModal({ pkg, currency, onClose, onBookNow }: PackageDetail
 // ==========================================
 function Passport3D({ user }: { user: User }) {
   const stamps = [
-    { country: 'Cancún, México', date: '15 NOV 2025', code: 'CUN-ARR-01', color: 'border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400', icon: '🇲🇽', seal: 'CARIBE MAYA' },
-    { country: 'París, Francia', date: '20 MAY 2025', code: 'CDG-VIP-88', color: 'border-sky-600 text-sky-600 dark:border-sky-400 dark:text-sky-400', icon: '🇫🇷', seal: 'DOUANE ROISSY' },
-    { country: 'Bali, Indonesia', date: '14 SEP 2024', code: 'DPS-IMM-32', color: 'border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400', icon: '🇮🇩', seal: 'BALI PARADISE' },
-    { country: 'Machu Picchu, Perú', date: '04 FEB 2024', code: 'CUZ-VIP-77', color: 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400', icon: '🇵🇪', seal: 'SANTUARIO INCA' },
-    { country: 'Santorini, Grecia', date: '19 AGO 2023', code: 'JTR-PORT-11', color: 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400', icon: '🇬🇷', seal: 'AEGEAN ENTRY' },
-    { country: 'Dubai, EAU', date: '08 DIC 2022', code: 'DXB-FAST-99', color: 'border-rose-600 text-rose-600 dark:border-rose-400 dark:text-rose-400', icon: '🇦🇪', seal: 'DESERT LUXURY' },
+    { country: 'Cancún, México', date: '15 NOV 2025', code: 'CUN-ARR-01', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇲🇽', seal: 'CARIBE MAYA' },
+    { country: 'París, Francia', date: '20 MAY 2025', code: 'CDG-VIP-88', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇫🇷', seal: 'DOUANE ROISSY' },
+    { country: 'Bali, Indonesia', date: '14 SEP 2024', code: 'DPS-IMM-32', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇮🇩', seal: 'BALI PARADISE' },
+    { country: 'Machu Picchu, Perú', date: '04 FEB 2024', code: 'CUZ-VIP-77', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇵🇪', seal: 'SANTUARIO INCA' },
+    { country: 'Santorini, Grecia', date: '19 AGO 2023', code: 'JTR-PORT-11', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇬🇷', seal: 'AEGEAN ENTRY' },
+    { country: 'Dubai, EAU', date: '08 DIC 2022', code: 'DXB-FAST-99', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇦🇪', seal: 'DESERT LUXURY' },
   ];
 
   return (
-    <TiltCard maxTilt={8} scale={1.01} className="w-full">
-      <div className="rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] border-2 border-amber-500/40 p-6 sm:p-8 shadow-2xl text-white relative overflow-hidden preserve-3d">
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-amber-400/20 via-amber-200/10 to-transparent blur-xl pointer-events-none" />
-
-        <div className="flex items-center justify-between border-b border-amber-500/30 pb-4 mb-6">
+    <div className="w-full">
+      <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 p-0.5 shadow-md flex items-center justify-center">
-              <div className="w-full h-full bg-[#0F172A] rounded-2xl flex items-center justify-center text-xl">
-                🌐
-              </div>
+            <div className="w-10 h-10 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-[#0284C7] dark:text-sky-400 flex items-center justify-center font-bold text-base border border-sky-100 dark:border-sky-900/30">
+              ✈
             </div>
             <div>
-              <span className="text-[10px] font-mono tracking-widest text-amber-300 uppercase font-bold block">
-                REPÚBLICA DEL VIAJERO · HORIZONTE MODERNO
+              <span className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase font-semibold block">
+                HORIZONTE CLUB · PROGRAMA DE VIAJEROS
               </span>
-              <h3 className="text-xl sm:text-2xl font-bold font-fraunces text-amber-100">
-                Pasaporte Biométrico 3D
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Perfil del Pasajero & Membresía
               </h3>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-mono font-bold border border-amber-400/40">
-            ★ SOCIO PLATINO 3D
+          <span className="px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700">
+            Socio Platino
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           {/* Left ID Credentials */}
-          <div className="md:col-span-5 p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-[#0EA5E9] to-[#F97316] flex items-center justify-center text-2xl font-bold text-white shadow-md border-2 border-white/20">
+          <div className="md:col-span-5 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-lg bg-slate-800 text-white flex items-center justify-center text-sm font-semibold">
                 {user.avatarInitials}
               </div>
               <div>
-                <span className="text-[9px] uppercase tracking-wider text-slate-400 block">Titular del Pasaporte</span>
-                <p className="font-bold text-base text-white">{user.name} {user.lastName}</p>
-                <p className="text-xs font-mono text-[#38BDF8]">{user.passport}</p>
+                <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 block font-medium">Titular de cuenta</span>
+                <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{user.name} {user.lastName}</p>
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">{user.passport}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-2 border-t border-white/10">
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-3 border-t border-slate-200 dark:border-slate-700/60">
               <div>
                 <span className="text-[9px] text-slate-400 block uppercase">Nacionalidad</span>
-                <span className="font-semibold text-slate-200">{user.country}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">{user.country}</span>
               </div>
               <div>
-                <span className="text-[9px] text-slate-400 block uppercase">Puntos VIP</span>
-                <span className="font-bold text-[#F97316]">{user.points.toLocaleString()} pts</span>
+                <span className="text-[9px] text-slate-400 block uppercase">Puntos acumulados</span>
+                <span className="font-semibold text-[#EA580C]">{user.points.toLocaleString()} pts</span>
               </div>
               <div>
                 <span className="text-[9px] text-slate-400 block uppercase">Emisión</span>
-                <span className="text-slate-300">2022 / DIGITAL</span>
+                <span className="text-slate-600 dark:text-slate-400">2022 / Digital</span>
               </div>
               <div>
-                <span className="text-[9px] text-slate-400 block uppercase">Validez</span>
-                <span className="text-emerald-400 font-bold">PERMANENTE</span>
+                <span className="text-[9px] text-slate-400 block uppercase">Estado</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Activo</span>
               </div>
             </div>
           </div>
@@ -2319,29 +2130,29 @@ function Passport3D({ user }: { user: User }) {
           {/* Right Stamps Grid */}
           <div className="md:col-span-7 space-y-2">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                Sellos de Inmigración Coleccionados ({stamps.length})
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                Historial de Destinos Visitados ({stamps.length})
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">Pasa el cursor para efecto 3D</span>
+              <span className="text-[11px] text-slate-400">Verificado</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {stamps.map((stamp, idx) => (
                 <div
                   key={idx}
-                  className={`p-2.5 rounded-xl border-2 border-dashed ${stamp.color} bg-black/25 flex flex-col justify-between hover:scale-105 hover:rotate-2 transition-transform duration-300 cursor-pointer shadow-xs select-none`}
-                  title={`Sello de ${stamp.country}`}
+                  className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition"
+                  title={`Visita a ${stamp.country}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">{stamp.icon}</span>
-                    <span className="text-[8px] font-mono font-black">{stamp.code}</span>
+                    <span className="text-xs">{stamp.icon}</span>
+                    <span className="text-[8px] font-mono font-medium text-slate-400">{stamp.code}</span>
                   </div>
                   <div className="my-1">
-                    <span className="text-[10px] font-bold block leading-tight truncate">{stamp.seal}</span>
-                    <span className="text-[8px] block opacity-80">{stamp.country.split(',')[0]}</span>
+                    <span className="text-[11px] font-semibold block leading-tight text-slate-800 dark:text-slate-200 truncate">{stamp.seal}</span>
+                    <span className="text-[9px] text-slate-500 block truncate">{stamp.country.split(',')[0]}</span>
                   </div>
-                  <div className="text-[8px] font-mono border-t border-current/30 pt-0.5 flex justify-between">
-                    <span>ENTRY</span>
+                  <div className="text-[9px] font-mono text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                    <span>REG</span>
                     <span>{stamp.date}</span>
                   </div>
                 </div>
@@ -2350,7 +2161,7 @@ function Passport3D({ user }: { user: User }) {
           </div>
         </div>
       </div>
-    </TiltCard>
+    </div>
   );
 }
 
@@ -2428,32 +2239,32 @@ function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
               soundFx.playClick();
               setIsOpen(true);
             }}
-            className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0EA5E9] to-[#38BDF8] text-white flex items-center justify-center text-2xl shadow-xl shadow-sky-500/30 hover:scale-110 active:scale-95 transition-all cursor-pointer animate-radar relative group"
-            title="Abrir Concierge Virtual 3D"
+            className="w-12 h-12 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer relative"
+            title="Asistente de Consultas"
+            aria-label="Abrir asistente de consultas"
           >
-            <span>🤖</span>
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#F97316] border-2 border-white flex items-center justify-center text-[9px] font-bold">
-              1
-            </span>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
           </button>
         )}
       </div>
 
       {/* Floating Chat Modal */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[520px] animate-scaleIn">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col h-[480px]">
           {/* Header */}
-          <div className="p-4 bg-gradient-to-r from-[#0F172A] to-[#1E293B] text-white flex items-center justify-between border-b border-white/10">
+          <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-[#0EA5E9] flex items-center justify-center text-xl shadow-xs">
-                🤖
+              <div className="w-8 h-8 rounded-md bg-[#0284C7] flex items-center justify-center text-sm font-semibold">
+                HM
               </div>
               <div>
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  Horizonte Concierge 3D
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  Asistente de Viaje
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
                 </span>
-                <span className="text-[10px] text-slate-300 block">Asistente de Viaje Inteligente</span>
+                <span className="text-[10px] text-slate-400 block">Horizonte Moderno</span>
               </div>
             </div>
             <button
@@ -2461,24 +2272,25 @@ function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
                 soundFx.playClick();
                 setIsOpen(false);
               }}
-              className="text-slate-400 hover:text-white text-base cursor-pointer px-2 py-1"
+              className="text-slate-400 hover:text-white p-1 rounded-md transition"
+              aria-label="Cerrar chat"
             >
               ✕
             </button>
           </div>
 
           {/* Messages list */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs">
             {messages.map((m, idx) => (
               <div
                 key={idx}
                 className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`p-3 rounded-2xl max-w-[85%] leading-relaxed ${
+                  className={`p-2.5 rounded-lg max-w-[85%] leading-relaxed ${
                     m.sender === 'user'
-                      ? 'bg-[#F97316] text-white rounded-tr-xs shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-[#1E293B] dark:text-[#E2E8F0] rounded-tl-xs border border-slate-200 dark:border-white/10'
+                      ? 'bg-[#0284C7] text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60'
                   }`}
                 >
                   <p>{m.text}</p>
@@ -2490,7 +2302,7 @@ function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
                       if (p) onSelectPackage(p);
                       setIsOpen(false);
                     }}
-                    className="mt-1.5 px-3 py-1 rounded-full bg-[#0EA5E9] text-white text-[10px] font-bold hover:bg-[#0284C7] transition cursor-pointer flex items-center gap-1 shadow-xs"
+                    className="mt-1 px-2.5 py-1 rounded-md bg-[#0284C7] text-white text-[10px] font-medium hover:bg-[#0369A1] transition cursor-pointer flex items-center gap-1"
                   >
                     <span>Ver este paquete</span>
                     <span>→</span>
@@ -2499,22 +2311,22 @@ function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
               </div>
             ))}
             {isTyping && (
-              <div className="flex items-center gap-1.5 text-slate-400 text-xs italic">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-bounce [animation-delay:0.4s]" />
-                <span>Concierge escribiendo...</span>
+              <div className="flex items-center gap-1 text-slate-400 text-xs italic">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-bounce [animation-delay:0.2s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-bounce [animation-delay:0.4s]" />
+                <span>Escribiendo...</span>
               </div>
             )}
           </div>
 
           {/* Suggested Quick Prompt Chips */}
-          <div className="p-2 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 overflow-x-auto flex gap-1.5 scrollbar-none">
+          <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-x-auto flex gap-1.5">
             {quickQuestions.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSend(q.text, q.answer, q.pkgId)}
-                className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-[10px] text-[#64748B] dark:text-[#94A3B8] hover:text-[#0EA5E9] dark:hover:text-white whitespace-nowrap transition cursor-pointer shrink-0"
+                className="px-2 py-1 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] text-slate-600 dark:text-slate-400 hover:border-[#0284C7] whitespace-nowrap transition cursor-pointer shrink-0"
               >
                 {q.text}
               </button>
@@ -2527,18 +2339,19 @@ function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
               e.preventDefault();
               handleSend(inputVal);
             }}
-            className="p-3 border-t border-slate-200 dark:border-white/10 flex items-center gap-2"
+            className="p-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900"
           >
             <input
               type="text"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              placeholder="Pregúntale al Concierge 3D..."
-              className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-[#1E293B] dark:text-[#E2E8F0] focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9]"
+              placeholder="Escribe tu consulta..."
+              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-[#0284C7]"
             />
             <button
               type="submit"
-              className="p-2 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white transition cursor-pointer"
+              className="p-1.5 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white transition cursor-pointer"
+              aria-label="Enviar mensaje"
             >
               <svg className="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
@@ -2596,115 +2409,113 @@ function HomePage({
   return (
     <div className="flex flex-col">
       {/* HERO SECTION CON THREE.JS 3D GLOBE */}
-      <div className="relative min-h-[720px] flex items-center justify-center overflow-hidden">
-        {/* Background Image with Dark & Tint Overlay */}
+      <div className="relative min-h-[600px] flex items-center justify-center overflow-hidden bg-slate-950">
+        {/* Background Image with Dark Tint Overlay */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
+          className="absolute inset-0 bg-cover bg-center opacity-25"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=80')`
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A]/92 via-[#0F172A]/80 to-[#0F172A]/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-slate-950" />
 
         {/* Hero Content Grid (Left Text & Search + Right 3D Globe) */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 z-10 w-full">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Left Col: Headings & Search Box */}
             <div className="lg:col-span-7 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 dark:bg-[#1E293B]/80 backdrop-blur-md border border-white/20 dark:border-[#334155] text-white dark:text-[#E2E8F0] text-xs sm:text-sm font-medium mb-6">
-                <span className="w-2 h-2 rounded-full bg-[#F97316] animate-ping" />
-                Explora el mundo en 3D · Temporada 2026/2027
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-200 text-xs font-medium mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]" />
+                Temporada 2026/2027 · Tarifas confirmadas
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-extrabold text-white font-fraunces tracking-tight leading-tight mb-4">
-                El viaje de tus sueños <span className="text-[#F97316] italic">comienza hoy</span>
+              <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight leading-tight mb-3">
+                Explorá destinos únicos en todo el mundo
               </h1>
 
-              <p className="text-slate-200 dark:text-[#94A3B8] text-base sm:text-lg max-w-xl mx-auto lg:mx-0 mb-8 font-normal leading-relaxed">
-                Descubre paquetes completos con vuelos, hoteles de lujo y experiencias inmersivas interactivas al mejor precio garantizado.
+              <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 mb-6 font-normal leading-relaxed">
+                Paquetes integrales, vuelos, estadías y alquiler de autos con confirmación en tiempo real y asistencia permanente.
               </p>
 
-              {/* SEARCH BAR BOX CON 3D TILT */}
-              <TiltCard maxTilt={6} scale={1.01} className="w-full">
-                <div className="bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-[#E2E8F0] dark:border-[#334155] transition-colors text-left">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                    {/* Destination */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider flex items-center gap-1.5">
-                        <svg className="w-4 h-4 text-[#0EA5E9] dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Destino
-                      </label>
-                      <input
-                        type="text"
-                        value={searchDestination}
-                        onChange={(e) => setSearchDestination(e.target.value)}
-                        placeholder="Ej: Cancún, París..."
-                        className="w-full bg-[#F8FAFC] dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-xl px-3.5 py-2.5 text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9]"
-                      />
-                    </div>
+              {/* SEARCH BAR BOX */}
+              <div className="w-full bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                  {/* Destination */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[#0284C7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Destino
+                    </label>
+                    <input
+                      type="text"
+                      value={searchDestination}
+                      onChange={(e) => setSearchDestination(e.target.value)}
+                      placeholder="Ej: Cancún, París..."
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
+                    />
+                  </div>
 
-                    {/* Dates */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider flex items-center gap-1.5">
-                        <svg className="w-4 h-4 text-[#0EA5E9] dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Fecha
-                      </label>
-                      <input
-                        type="date"
-                        value={searchDates}
-                        onChange={(e) => setSearchDates(e.target.value)}
-                        className="w-full bg-[#F8FAFC] dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-xl px-3.5 py-2.5 text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9]"
-                      />
-                    </div>
+                  {/* Dates */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[#0284C7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Fecha
+                    </label>
+                    <input
+                      type="date"
+                      value={searchDates}
+                      onChange={(e) => setSearchDates(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
+                    />
+                  </div>
 
-                    {/* Passengers */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider flex items-center gap-1.5">
-                        <svg className="w-4 h-4 text-[#0EA5E9] dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        Pasajeros
-                      </label>
-                      <select
-                        value={searchPassengers}
-                        onChange={(e) => setSearchPassengers(Number(e.target.value))}
-                        className="w-full bg-[#F8FAFC] dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-xl px-3.5 py-2.5 text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] cursor-pointer"
-                      >
-                        <option value={1}>1 pasajero</option>
-                        <option value={2}>2 pasajeros (Pareja)</option>
-                        <option value={3}>3 pasajeros</option>
-                        <option value={4}>4 pasajeros (Familia)</option>
-                      </select>
-                    </div>
+                  {/* Passengers */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[#0284C7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      Pasajeros
+                    </label>
+                    <select
+                      value={searchPassengers}
+                      onChange={(e) => setSearchPassengers(Number(e.target.value))}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7] cursor-pointer"
+                    >
+                      <option value={1}>1 pasajero</option>
+                      <option value={2}>2 pasajeros (Pareja)</option>
+                      <option value={3}>3 pasajeros</option>
+                      <option value={4}>4 pasajeros (Familia)</option>
+                    </select>
+                  </div>
 
-                    {/* Search Button */}
-                    <div>
-                      <button
-                        onClick={() => {
-                          const el = document.getElementById('paquetes-section');
-                          el?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="w-full bg-[#F97316] hover:bg-[#EA580C] text-white py-3 px-5 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/25 transition-all hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        Buscar Paquetes
-                      </button>
-                    </div>
+                  {/* Search Button */}
+                  <div>
+                    <button
+                      onClick={() => {
+                        const el = document.getElementById('paquetes-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white py-2.5 px-4 rounded-lg font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      Buscar Paquetes
+                    </button>
                   </div>
                 </div>
-              </TiltCard>
+              </div>
             </div>
 
-            {/* Right Col: Three.js 3D Interactive Globe */}
+            {/* Right Col: Three.js Interactive Globe */}
             <div className="lg:col-span-5 flex justify-center">
-              <div className="w-full max-w-[460px] relative animate-float-3d">
+              <div className="w-full max-w-[420px] relative">
                 <ThreeGlobe
                   isDarkMode={isDarkMode}
                   packages={packages}
@@ -2720,151 +2531,140 @@ function HomePage({
         </div>
       </div>
 
-      {/* STATS STRIP CON 3D TILT */}
-      <section className="bg-[#F1F5F9]/60 dark:bg-[#0F172A] border-y border-[#E2E8F0] dark:border-[#334155] py-10 transition-colors">
+      {/* STATS STRIP */}
+      <section className="bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800 py-6 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <TiltCard maxTilt={10}>
-              <div className="p-4 bg-white/70 dark:bg-[#1E293B]/60 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs">
-                <p className="text-3xl sm:text-4xl font-extrabold text-[#0EA5E9] dark:text-[#E2E8F0] font-fraunces">2.4M+</p>
-                <p className="text-sm font-medium text-[#64748B] dark:text-[#94A3B8] mt-1">Clientes satisfechos</p>
-              </div>
-            </TiltCard>
+            <div className="py-2">
+              <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">2.4M+</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Clientes satisfechos</p>
+            </div>
 
-            <TiltCard maxTilt={10}>
-              <div className="p-4 bg-white/70 dark:bg-[#1E293B]/60 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs">
-                <p className="text-3xl sm:text-4xl font-extrabold text-[#F97316] font-fraunces">500+</p>
-                <p className="text-sm font-medium text-[#64748B] dark:text-[#94A3B8] mt-1">Destinos en el mundo</p>
-              </div>
-            </TiltCard>
+            <div className="py-2 border-l border-slate-100 dark:border-slate-800">
+              <p className="text-2xl sm:text-3xl font-bold text-[#EA580C]">500+</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Destinos en el mundo</p>
+            </div>
 
-            <TiltCard maxTilt={10}>
-              <div className="p-4 bg-white/70 dark:bg-[#1E293B]/60 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs">
-                <p className="text-3xl sm:text-4xl font-extrabold text-[#0EA5E9] dark:text-[#E2E8F0] font-fraunces">12.000+</p>
-                <p className="text-sm font-medium text-[#64748B] dark:text-[#94A3B8] mt-1">Paquetes turísticos</p>
-              </div>
-            </TiltCard>
+            <div className="py-2 border-l border-slate-100 dark:border-slate-800">
+              <p className="text-2xl sm:text-3xl font-bold text-[#0284C7] dark:text-sky-400">12.000+</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Paquetes turísticos</p>
+            </div>
 
-            <TiltCard maxTilt={10}>
-              <div className="p-4 bg-white/70 dark:bg-[#1E293B]/60 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs">
-                <p className="text-3xl sm:text-4xl font-extrabold text-[#64748B] dark:text-[#94A3B8] font-fraunces">99.4%</p>
-                <p className="text-sm font-medium text-[#64748B] dark:text-[#94A3B8] mt-1">Reseñas 5 estrellas</p>
-              </div>
-            </TiltCard>
+            <div className="py-2 border-l border-slate-100 dark:border-slate-800">
+              <p className="text-2xl sm:text-3xl font-bold text-slate-700 dark:text-slate-300">99.4%</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Reseñas 5 estrellas</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* PACKAGES CATALOG SECTION CON 3D TILT CARDS & VISTA LISTA SIN IMÁGENES (1.3.1) */}
-      <section id="paquetes-section" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
+      {/* PACKAGES CATALOG SECTION */}
+      <section id="paquetes-section" className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0EA5E9] dark:text-[#94A3B8] uppercase tracking-wider mb-2">
-              <span className="w-2 h-2 rounded-full bg-[#0EA5E9] dark:bg-[#94A3B8]" />
+            <span className="text-xs font-semibold text-[#0284C7] dark:text-sky-400 uppercase tracking-wider block mb-1">
               Catálogo de Servicios Turísticos
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               Paquetes, Vuelos, Estadías y Autos
             </h2>
-            <p className="text-[#64748B] dark:text-[#94A3B8] mt-2 max-w-xl text-sm">
-              Selecciona tus servicios turísticos, agrégalos a tu carrito de compras o resérvalos directamente con confirmación en tiempo real.
+            <p className="text-slate-600 dark:text-slate-400 mt-1 max-w-xl text-xs sm:text-sm">
+              Selecciona tus servicios, agrégalos a tu carrito de compras o resérvalos directamente con confirmación inmediata.
             </p>
           </div>
 
-          {/* Selector de Modo de Vista (Requisito 1.3.1 del PDF) */}
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shrink-0">
+          {/* Selector de Modo de Vista */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-white dark:bg-slate-700 text-[#0EA5E9] shadow-sm'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-slate-700 text-[#0284C7] dark:text-sky-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <span>🎴</span>
-              <span>Cuadrícula 3D</span>
+              Cuadrícula
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-slate-700 text-[#0EA5E9] shadow-sm'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-slate-700 text-[#0284C7] dark:text-sky-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="1.3.1. Consultar la lista de productos (en formato de lista, sin imágenes)"
+              title="1.3.1. Consultar la lista de productos (formato lista sin fotos)"
             >
-              <span>📋</span>
-              <span>Lista Rápida (Sin Fotos)</span>
+              Lista rápida
             </button>
           </div>
         </div>
 
         {/* Categorías de Servicios del PDF (Paquetes, Aéreos, Estadías, Autos) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none border-b border-slate-200 dark:border-white/10">
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 border-b border-slate-200 dark:border-slate-800">
           <button
             onClick={() => {
               setServiceCategory('todos');
               setActiveFilterTag('Todos');
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               serviceCategory === 'todos' && activeFilterTag === 'Todos'
-                ? 'bg-[#0EA5E9] text-white shadow-md'
-                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+                ? 'bg-[#0284C7] text-white'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[#0284C7]'
             }`}
           >
-            Todos los Servicios
+            Todos los servicios
           </button>
           <button
             onClick={() => {
               setServiceCategory('paquete');
               setActiveFilterTag('Todos');
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               serviceCategory === 'paquete'
-                ? 'bg-[#0EA5E9] text-white shadow-md'
-                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+                ? 'bg-[#0284C7] text-white'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[#0284C7]'
             }`}
           >
-            🌴 Paquetes Integrales
+            Paquetes integrales
           </button>
           <button
             onClick={() => {
               setServiceCategory('aereo');
               setActiveFilterTag('Todos');
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               serviceCategory === 'aereo'
-                ? 'bg-[#0EA5E9] text-white shadow-md'
-                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+                ? 'bg-[#0284C7] text-white'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[#0284C7]'
             }`}
           >
-            ✈️ Pasajes Aéreos
+            Pasajes aéreos
           </button>
           <button
             onClick={() => {
               setServiceCategory('estadia');
               setActiveFilterTag('Todos');
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               serviceCategory === 'estadia'
-                ? 'bg-[#0EA5E9] text-white shadow-md'
-                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+                ? 'bg-[#0284C7] text-white'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[#0284C7]'
             }`}
           >
-            🏨 Estadías & Hoteles
+            Estadías y hoteles
           </button>
           <button
             onClick={() => {
               setServiceCategory('auto');
               setActiveFilterTag('Todos');
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               serviceCategory === 'auto'
-                ? 'bg-[#0EA5E9] text-white shadow-md'
-                : 'bg-white dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8] border border-slate-200 dark:border-white/5 hover:border-[#0EA5E9]'
+                ? 'bg-[#0284C7] text-white'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[#0284C7]'
             }`}
           >
-            🚗 Alquiler de Autos
+            Alquiler de autos
           </button>
         </div>
 
@@ -2872,66 +2672,62 @@ function HomePage({
         {/* VISTA 1: LISTA RÁPIDA SIN IMÁGENES (Punto 1.3.1 del PDF)        */}
         {/* ============================================================== */}
         {viewMode === 'list' ? (
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-slate-800/90 shadow-xl overflow-hidden animate-fadeIn">
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <span className="font-bold text-[#0EA5E9] flex items-center gap-2">
-                <span>📋</span>
-                <span>Modo de Vista: Lista de Productos sin imágenes (Requisito 1.3.1)</span>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                Lista de productos sin imágenes (Requisito 1.3.1)
               </span>
               <span className="text-slate-500">
-                Mostrando {filteredInventory.length} servicios disponibles
+                {filteredInventory.length} servicios disponibles
               </span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-white/10 text-[#64748B] dark:text-[#94A3B8] font-bold uppercase tracking-wider">
+                <thead className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
                   <tr>
-                    <th className="py-3.5 px-4">Código</th>
-                    <th className="py-3.5 px-4">Categoría</th>
-                    <th className="py-3.5 px-4">Nombre y Descripción del Servicio</th>
-                    <th className="py-3.5 px-4 text-center">Cupos</th>
-                    <th className="py-3.5 px-4 text-right">Precio Unitario</th>
-                    <th className="py-3.5 px-4 text-center">Acciones</th>
+                    <th className="py-3 px-4">Código</th>
+                    <th className="py-3 px-4">Categoría</th>
+                    <th className="py-3 px-4">Nombre y Descripción del Servicio</th>
+                    <th className="py-3 px-4 text-center">Cupos</th>
+                    <th className="py-3 px-4 text-right">Precio Unitario</th>
+                    <th className="py-3 px-4 text-center">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredInventory.map((item) => (
-                    <tr key={item.codigo} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#0EA5E9]">
+                    <tr key={item.codigo} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 font-mono font-semibold text-[#0284C7] dark:text-sky-400">
                         {item.codigo}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 font-semibold capitalize text-[11px]">
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-medium capitalize text-[11px] text-slate-700 dark:text-slate-300">
                           {item.categoria}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-[#1E293B] dark:text-white text-sm">
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
                           {item.nombre}
                         </div>
                         <div className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                           {item.descripcion}
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">
+                      <td className="py-3 px-4 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
                           {item.stock} cupos
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-[#F97316] text-sm">
+                      <td className="py-3 px-4 text-right font-semibold text-[#EA580C] text-xs sm:text-sm">
                         {formatPriceCustom(item.precioUnitario, currency)}
                       </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => onAddToCart(item)}
-                            className="px-3 py-1.5 rounded-lg bg-[#0EA5E9]/10 text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                            title="Añadir este servicio al carrito"
-                          >
-                            <span>🛒</span>
-                            <span>Añadir</span>
-                          </button>
-                        </div>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => onAddToCart(item)}
+                          className="px-3 py-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[#0284C7] hover:text-white dark:hover:bg-[#0284C7] text-xs font-medium transition cursor-pointer"
+                          title="Añadir este servicio al carrito"
+                        >
+                          Añadir al carrito
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -2941,157 +2737,133 @@ function HomePage({
           </div>
         ) : (
           /* ============================================================== */
-          /* VISTA 2: CUADRÍCULA 3D INMERSIVA CON FOTOS                    */
+          /* VISTA 2: CUADRÍCULA DE PAQUETES CON FOTOS                     */
           /* ============================================================== */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPackages.map((pkg) => (
-            <TiltCard key={pkg.id} maxTilt={12} scale={1.03}>
-              <div className="bg-white dark:bg-[#1E293B] rounded-2xl overflow-hidden border border-[#E2E8F0] dark:border-[#334155] shadow-sm hover:shadow-2xl dark:hover:border-[#94A3B8]/50 transition-all duration-300 flex flex-col h-full group preserve-3d">
-                {/* Image & Badges con 3D Depth */}
-                <div className="relative h-64 overflow-hidden preserve-3d">
-                  <img
-                    src={pkg.image}
-                    alt={pkg.destination}
-                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-85" />
+            <div key={pkg.id} className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition flex flex-col h-full group">
+              {/* Image & Badges */}
+              <div className="relative h-56 overflow-hidden">
+                <img
+                  src={pkg.image}
+                  alt={pkg.destination}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-80" />
 
-                  {/* Tag Badge que flota en Z */}
-                  <div
-                    style={{ transform: 'translateZ(30px)' }}
-                    className="absolute top-4 left-4"
-                  >
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg ${pkg.tagColor}`}>
-                      {pkg.tag}
-                    </span>
-                  </div>
-
-                  {/* Nights badge con 3D Depth */}
-                  <div
-                    style={{ transform: 'translateZ(25px)' }}
-                    className="absolute top-4 right-4 bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-slate-800 dark:text-[#E2E8F0] shadow-sm flex items-center gap-1 border border-black/5 dark:border-[#334155]"
-                  >
-                    <svg className="w-3.5 h-3.5 text-[#0EA5E9] dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    {pkg.nights} noches
-                  </div>
-
-                  {/* Location text en 3D Depth */}
-                  <div
-                    style={{ transform: 'translateZ(20px)' }}
-                    className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white"
-                  >
-                    <span className="text-xl font-bold font-fraunces flex items-center gap-1 drop-shadow-md">
-                      {pkg.destination}, {pkg.country}
-                    </span>
-                    <div className="flex items-center gap-1 bg-black/50 backdrop-blur-xs px-2 py-0.5 rounded-md text-xs font-bold">
-                      <span className="text-amber-400">★</span>
-                      <span>{pkg.rating}</span>
-                      <span className="text-slate-300 font-normal">({pkg.reviewsCount})</span>
-                    </div>
-                  </div>
+                {/* Tag Badge */}
+                <div className="absolute top-3 left-3">
+                  <span className={`px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wider text-white shadow-xs ${pkg.tagColor}`}>
+                    {pkg.tag}
+                  </span>
                 </div>
 
-                {/* Package Details */}
-                <div className="p-6 flex-1 flex flex-col justify-between" style={{ transform: 'translateZ(15px)' }}>
-                  <div>
-                    <h3 className="text-lg font-bold text-[#1E293B] dark:text-[#E2E8F0] group-hover:text-[#0EA5E9] dark:group-hover:text-[#94A3B8] transition-colors leading-snug">
-                      {pkg.title}
-                    </h3>
-                    <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-2 line-clamp-2 leading-relaxed">
-                      {pkg.description}
-                    </p>
+                {/* Nights badge */}
+                <div className="absolute top-3 right-3 bg-slate-900/80 text-white px-2.5 py-1 rounded-md text-[11px] font-medium shadow-xs flex items-center gap-1 border border-white/10">
+                  <span>{pkg.nights} noches</span>
+                </div>
 
-                    {/* Highlight */}
-                    <div className="mt-3 py-1.5 px-2.5 bg-[#F1F5F9]/80 dark:bg-[#0F172A] border border-[#E2E8F0] dark:border-[#334155] rounded-lg text-xs text-[#64748B] dark:text-[#E2E8F0] font-medium flex items-center gap-1.5 shadow-xs">
-                      <svg className="w-3.5 h-3.5 shrink-0 text-[#F97316]" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                      </svg>
-                      <span className="truncate">{pkg.highlight}</span>
-                    </div>
-
-                    {/* Includes Chips */}
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {pkg.includes.map((item, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md bg-[#F1F5F9] dark:bg-[#0F172A] text-[#475569] dark:text-[#E2E8F0] border border-[#E2E8F0]/60 dark:border-[#334155]"
-                        >
-                          <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Price and CTA */}
-                  <div className="mt-6 pt-4 border-t border-[#E2E8F0] dark:border-[#334155] flex items-center justify-between" style={{ transform: 'translateZ(25px)' }}>
-                    <div>
-                      <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-medium uppercase tracking-wider block">
-                        Precio desde
-                      </span>
-<div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-extrabold text-[#F97316] font-fraunces">
-                          {formatPriceCustom(pkg.price, currency)}
-                        </span>
-                        <span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-normal">/ pers.</span>
-                      </div>
-                    </div>
-
-<div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          soundFx.playWoosh();
-                          onExplore3D(pkg);
-                        }}
-                        className="px-2.5 py-2.5 rounded-xl border border-sky-300 dark:border-sky-500/30 bg-sky-50/80 dark:bg-slate-800 text-[#0EA5E9] hover:bg-sky-100 dark:hover:bg-slate-700 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                        title="Ver itinerario detallado y clima 3D"
-                      >
-                        <span>✨ 3D</span>
-                      </button>
-                      <button
-                        onClick={() => onAddToCart(pkg)}
-                        className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#0EA5E9] hover:text-[#0EA5E9] text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
-                        title="Añadir este paquete al carrito de compras"
-                      >
-                        <span>🛒</span>
-                        <span className="hidden sm:inline">Añadir</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          soundFx.playCelebration();
-                          onBookNow(pkg);
-                        }}
-                        className="px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md shadow-orange-500/20 hover:shadow-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-                      >
-                        <span>Reservar</span>
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                      </button>
-                    </div>
+                {/* Location text */}
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
+                  <span className="text-lg font-semibold">
+                    {pkg.destination}, {pkg.country}
+                  </span>
+                  <div className="flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded-md text-xs font-semibold">
+                    <span className="text-amber-400">★</span>
+                    <span>{pkg.rating}</span>
+                    <span className="text-slate-300 text-[10px] font-normal">({pkg.reviewsCount})</span>
                   </div>
                 </div>
               </div>
-            </TiltCard>
+
+              {/* Package Details */}
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#0284C7] dark:group-hover:text-sky-400 transition-colors leading-snug">
+                    {pkg.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
+                    {pkg.description}
+                  </p>
+
+                  {/* Highlight */}
+                  <div className="mt-3 py-1 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-md text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1.5">
+                    <span className="text-[#EA580C] font-bold">✓</span>
+                    <span className="truncate">{pkg.highlight}</span>
+                  </div>
+
+                  {/* Includes Chips */}
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {pkg.includes.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price and CTA */}
+                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">
+                      Precio desde
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-bold text-[#EA580C]">
+                        {formatPriceCustom(pkg.price, currency)}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-normal">/ pers.</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        soundFx.playWoosh();
+                        onExplore3D(pkg);
+                      }}
+                      className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-[#0284C7] hover:text-[#0284C7] text-xs font-medium transition cursor-pointer"
+                      title="Ver itinerario detallado"
+                    >
+                      Detalles 3D
+                    </button>
+                    <button
+                      onClick={() => onAddToCart(pkg)}
+                      className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium transition cursor-pointer"
+                      title="Añadir este paquete al carrito"
+                    >
+                      Añadir
+                    </button>
+                    <button
+                      onClick={() => {
+                        soundFx.playCelebration();
+                        onBookNow(pkg);
+                      }}
+                      className="px-3.5 py-1.5 rounded-md bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold text-xs transition cursor-pointer"
+                    >
+                      Reservar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
         )}
 
         {filteredPackages.length === 0 && (
-          <div className="text-center py-16 bg-[#F1F5F9]/40 dark:bg-[#1E293B] rounded-2xl border border-dashed border-[#E2E8F0] dark:border-[#334155]">
-            <p className="text-4xl mb-3">🔍</p>
-            <h3 className="text-lg font-bold text-[#1E293B] dark:text-[#E2E8F0]">No encontramos paquetes con esos filtros</h3>
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1">Prueba seleccionando "Todos" o buscando otro destino en el globo 3D.</p>
+          <div className="text-center py-12 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">No encontramos resultados con esos filtros</h3>
+            <p className="text-xs text-slate-500 mt-1">Intenta con otro término de búsqueda o restablece los filtros.</p>
             <button
               onClick={() => {
                 setActiveFilterTag('Todos');
                 setSearchDestination('');
               }}
-              className="mt-4 px-4 py-2 bg-[#0EA5E9] dark:bg-[#334155] text-white rounded-xl text-xs font-semibold"
+              className="mt-3 px-3 py-1.5 bg-[#0284C7] text-white rounded-md text-xs font-medium"
             >
               Restablecer filtros
             </button>
@@ -3099,93 +2871,84 @@ function HomePage({
         )}
       </section>
 
-      {/* POR QUÉ ELEGIRNOS CON 3D TILT */}
-      <section className="bg-[#F1F5F9]/40 dark:bg-[#0F172A] py-20 border-t border-[#E2E8F0] dark:border-[#334155] transition-colors">
+      {/* POR QUÉ ELEGIRNOS */}
+      <section className="bg-slate-50 dark:bg-slate-900/40 py-16 border-t border-slate-200 dark:border-slate-800 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#F97316]">Confianza & Seguridad</span>
-            <h2 className="text-3xl sm:text-4xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0] mt-2">
+          <div className="text-center max-w-xl mx-auto mb-10">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#EA580C]">Garantía y Confianza</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">
               ¿Por qué elegir Horizonte Moderno?
             </h2>
-            <p className="text-[#64748B] dark:text-[#94A3B8] mt-3 text-sm sm:text-base">
-              Más de una década conectando viajeros con sus destinos favoritos con la mayor tranquilidad y soporte del mercado.
+            <p className="text-slate-500 dark:text-slate-400 mt-2 text-xs sm:text-sm">
+              Servicios respaldados con atención personalizada antes, durante y después de tu viaje.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <TiltCard maxTilt={10}>
-              <div className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm hover:shadow-xl transition text-center sm:text-left flex flex-col items-center sm:items-start h-full">
-                <div className="w-14 h-14 rounded-2xl bg-[#F1F5F9] dark:bg-[#0F172A] text-[#0EA5E9] dark:text-[#94A3B8] flex items-center justify-center mb-6 shadow-xs border border-[#E2E8F0] dark:border-[#334155]">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces">Precio Garantizado</h3>
-                <p className="text-[#64748B] dark:text-[#94A3B8] text-sm mt-3 leading-relaxed">
-                  Si encuentras el mismo paquete más barato en otra plataforma, te igualamos la tarifa y te otorgamos un 10% adicional en puntos para tu próximo viaje.
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col h-full">
+              <div className="w-10 h-10 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-400 flex items-center justify-center mb-4 border border-sky-100 dark:border-sky-900/40">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-            </TiltCard>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Tarifas Transparentes</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
+                Precios finales con impuestos y tasas incluidas, sin cargos ocultos ni sorpresas en el check-out.
+              </p>
+            </div>
 
-            <TiltCard maxTilt={10}>
-              <div className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm hover:shadow-xl transition text-center sm:text-left flex flex-col items-center sm:items-start h-full">
-                <div className="w-14 h-14 rounded-2xl bg-orange-50 dark:bg-[#0F172A] text-[#F97316] flex items-center justify-center mb-6 shadow-xs border border-orange-200 dark:border-[#334155]">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces">Pago 100% Seguro 3D</h3>
-                <p className="text-[#64748B] dark:text-[#94A3B8] text-sm mt-3 leading-relaxed">
-                  Procesamiento con encriptación SSL bancaria y validación biométrica 3D Secure. Cuotas sin interés y confirmación de voucher inmediata.
-                </p>
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col h-full">
+              <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-[#EA580C] dark:text-orange-400 flex items-center justify-center mb-4 border border-orange-100 dark:border-orange-900/40">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
               </div>
-            </TiltCard>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Pagos Seguros y Cuotas</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
+                Procesamiento con encriptación bancaria y financiación en cuotas fijas con todas las tarjetas principales.
+              </p>
+            </div>
 
-            <TiltCard maxTilt={10}>
-              <div className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm hover:shadow-xl transition text-center sm:text-left flex flex-col items-center sm:items-start h-full">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-[#0F172A] text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-6 shadow-xs border border-emerald-200 dark:border-[#334155]">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces">Atención Experta 24/7</h3>
-                <p className="text-[#64748B] dark:text-[#94A3B8] text-sm mt-3 leading-relaxed">
-                  Asesores turísticos reales listos para apoyarte en cualquier momento vía WhatsApp, teléfono o email antes, durante y después de tu aventura.
-                </p>
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col h-full">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 border border-emerald-100 dark:border-emerald-900/40">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
               </div>
-            </TiltCard>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Atención Personalizada 24/7</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
+                Asesores turísticos dedicados para asistirte ante imprevistos, cambios de fechas o consultas de tu itinerario.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* BANNER CTA */}
       {!isLoggedIn && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full">
-          <TiltCard maxTilt={5}>
-            <div className="bg-gradient-to-r from-[#0EA5E9] via-[#64748B] to-[#475569] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#334155] border border-[#E2E8F0] dark:border-[#334155] rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-white/5 rounded-full blur-2xl" />
-              <div className="relative z-10 max-w-2xl">
-                <span className="inline-block px-3 py-1 rounded-full bg-white/10 dark:bg-[#334155] text-orange-200 text-xs font-bold uppercase tracking-wider mb-4 border border-white/20 dark:border-[#94A3B8]/30">
-                  Beneficio Exclusivo Miembros
-                </span>
-                <h3 className="text-3xl sm:text-4xl font-bold font-fraunces leading-tight">
-                  Regístrate hoy y obtén hasta $150 USD de descuento en tu primera compra
-                </h3>
-                <p className="text-emerald-100 dark:text-[#94A3B8] mt-3 text-sm sm:text-base leading-relaxed">
-                  Únete a más de 2 millones de miembros que acceden a tarifas secretas, upgrades de habitación y promociones anticipadas.
-                </p>
-              </div>
-
-              <div className="relative z-10 shrink-0">
-                <button
-                  onClick={onNavigateRegister}
-                  className="px-8 py-4 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold rounded-2xl shadow-xl shadow-black/20 hover:scale-105 transition-transform active:scale-95 cursor-pointer text-sm sm:text-base"
-                >
-                  Crear cuenta gratis
-                </button>
-              </div>
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-10 text-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="max-w-xl text-center md:text-left">
+              <span className="inline-block px-2.5 py-0.5 rounded-md bg-slate-800 text-[#EA580C] text-[11px] font-semibold uppercase tracking-wider mb-2 border border-slate-700">
+                Beneficio para Nuevos Usuarios
+              </span>
+              <h3 className="text-xl sm:text-2xl font-bold leading-tight">
+                Creá tu cuenta y accedé a beneficios exclusivos en tu primera reserva
+              </h3>
+              <p className="text-slate-400 mt-2 text-xs sm:text-sm leading-relaxed">
+                Seguimiento de pedidos en tiempo real, emisión inmediata de vouchers y acumulación de puntos canjeables.
+              </p>
             </div>
-          </TiltCard>
+
+            <div className="shrink-0">
+              <button
+                onClick={onNavigateRegister}
+                className="px-6 py-3 bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold rounded-lg transition-colors cursor-pointer text-xs sm:text-sm"
+              >
+                Crear cuenta gratis
+              </button>
+            </div>
+          </div>
         </section>
       )}
     </div>
@@ -3230,94 +2993,90 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] grid grid-cols-1 lg:grid-cols-2">
-      {/* Left Inspiration Split */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-[#0F172A] text-white overflow-hidden">
+    <div className="min-h-[calc(100vh-64px)] grid grid-cols-1 lg:grid-cols-2">
+      {/* Left Column Brand Split */}
+      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-slate-900 text-white overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-55 scale-105 transition-transform duration-1000"
+          className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80')`
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40" />
 
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 dark:bg-[#1E293B]/80 backdrop-blur-md text-xs font-semibold text-[#E2E8F0] border border-white/20 dark:border-[#334155]">
-            <span>✈️</span> Horizonte Moderno 3D
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200">
+            <span>✈</span> Horizonte Moderno
           </div>
         </div>
 
         <div className="relative z-10 max-w-md">
-          <p className="text-2xl font-bold font-fraunces leading-relaxed mb-4 text-[#E2E8F0]">
-            "Viajar es la única cosa que compras y te hace más rico."
-          </p>
-          <p className="text-sm text-[#94A3B8]">
-            Accede a tu panel para ver tus itinerarios en 3D, gestionar reservas y acumular puntos canjeables en tus próximas vacaciones.
+          <h2 className="text-2xl font-bold leading-snug mb-3 text-white">
+            Tu plataforma integral de gestión de viajes y reservas turísticas
+          </h2>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Accedé a tu panel para verificar pedidos en tiempo real, consultar tus vouchers y gestionar tus itinerarios.
           </p>
         </div>
 
-        <div className="relative z-10 text-xs text-[#94A3B8]/80 font-mono">
-          © 2026 Horizonte Moderno. Todos los derechos reservados.
+        <div className="relative z-10 text-xs text-slate-500 font-mono">
+          © 2026 Horizonte Moderno · Sistema de Gestión Turística
         </div>
       </div>
 
       {/* Right Form Split */}
-      <div className="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-white dark:bg-[#0F172A] transition-colors">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-white dark:bg-slate-950 transition-colors">
+        <div className="w-full max-w-sm space-y-6">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#F97316]">Bienvenido de vuelta</span>
-            <h2 className="text-3xl font-extrabold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces mt-1">Iniciar Sesión</h2>
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-2">
-              Ingresa tus credenciales para acceder a tus reservas y beneficios.
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Iniciar Sesión</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Ingresá tus credenciales para acceder a tus reservas y pedidos.
             </p>
           </div>
 
-          {/* Box de Credenciales de Prueba Olimpiadas IPP */}
-          <div className="p-3.5 bg-gradient-to-r from-sky-50 to-orange-50 dark:from-slate-800/80 dark:to-slate-800/50 border border-sky-200 dark:border-sky-500/20 rounded-2xl shadow-xs">
+          {/* Box de Cuentas de Prueba Evaluador */}
+          <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold text-[#0EA5E9] uppercase tracking-wider flex items-center gap-1.5">
-                <span>🧪</span>
-                <span>Mesa Evaluadora - Olimpiadas IPP</span>
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Acceso Rápido · Mesa Evaluadora
               </span>
-              <span className="text-[10px] bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-bold px-2 py-0.5 rounded-full">
-                1-Clic
+              <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium px-1.5 py-0.2 rounded-sm">
+                Demo
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => onLoginSuccess('maria.gonzalez@horizontemoderno.com')}
-                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-left hover:border-[#0EA5E9] transition cursor-pointer group shadow-2xs"
+                className="p-2 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-[#0284C7] transition cursor-pointer"
               >
-                <div className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1">
-                  <span>👤</span>
-                  <span>Pasajera (María)</span>
+                <div className="text-xs font-semibold text-slate-800 dark:text-white">
+                  Pasajera (María)
                 </div>
-                <div className="text-[10px] text-slate-500 line-clamp-1">maria.gonzalez@...</div>
+                <div className="text-[10px] text-slate-400 truncate">maria.gonzalez@...</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => onLoginAsSalesAdmin ? onLoginAsSalesAdmin() : onLoginSuccess('jefeventas@horizontemoderno.com')}
-                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-500/20 text-left hover:border-[#F97316] transition cursor-pointer group shadow-2xs"
+                className="p-2 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-[#EA580C] transition cursor-pointer"
               >
-                <div className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <span>👔</span>
-                  <span>Jefe Ventas (Carlos)</span>
+                <div className="text-xs font-semibold text-[#EA580C]">
+                  Jefe Ventas (Carlos)
                 </div>
-                <div className="text-[10px] text-slate-500 line-clamp-1">jefeventas@...</div>
+                <div className="text-[10px] text-slate-400 truncate">jefeventas@...</div>
               </button>
             </div>
           </div>
 
           {/* Social Logins */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => onLoginSuccess('maria.gonzalez@gmail.com')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 border border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#1E293B] rounded-xl hover:bg-[#F1F5F9] dark:hover:bg-[#334155] transition text-xs font-semibold text-[#1E293B] dark:text-[#E2E8F0] cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center justify-center gap-2 py-2 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 transition text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z" />
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.27 21.36 7.35 24 12 24z" />
                 <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z" />
@@ -3329,9 +3088,9 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
             <button
               type="button"
               onClick={() => onLoginSuccess('maria.gonzalez@facebook.com')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 border border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#1E293B] rounded-xl hover:bg-[#F1F5F9] dark:hover:bg-[#334155] transition text-xs font-semibold text-[#1E293B] dark:text-[#E2E8F0] cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center justify-center gap-2 py-2 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 transition text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
             >
-              <svg className="w-4 h-4 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               <span>Facebook</span>
@@ -3339,25 +3098,22 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
           </div>
 
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-[#E2E8F0] dark:border-[#334155] w-full" />
-            <span className="bg-white dark:bg-[#0F172A] px-3 text-xs text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider">
-              o con tu email
+            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+            <span className="bg-white dark:bg-slate-950 px-2 text-[11px] text-slate-400 uppercase tracking-wider">
+              o con email
             </span>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             {errorMsg && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-300 text-xs font-medium flex items-center gap-2">
-                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-300 text-xs font-medium flex items-center gap-2">
                 <span>{errorMsg}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
                 Correo Electrónico
               </label>
               <input
@@ -3366,13 +3122,13 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ejemplo@correo.com"
-                className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#1E293B] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8] transition"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Contraseña
                 </label>
                 <a
@@ -3381,7 +3137,7 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
                     e.preventDefault();
                     alert('Hemos enviado un correo de recuperación a tu dirección.');
                   }}
-                  className="text-xs text-[#0EA5E9] dark:text-[#94A3B8] hover:underline font-semibold"
+                  className="text-xs text-[#0284C7] hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </a>
@@ -3393,23 +3149,14 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#1E293B] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8] transition pr-10"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7] pr-9"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
                 >
-                  {showPassword ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
+                  <span className="text-xs">{showPassword ? 'Ocultar' : 'Ver'}</span>
                 </button>
               </div>
             </div>
@@ -3420,30 +3167,30 @@ function LoginPage({ onLoginSuccess, onLoginAsSalesAdmin, onNavigateRegister }: 
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-[#0EA5E9] dark:text-[#334155] rounded-sm border-[#E2E8F0] focus:ring-[#0EA5E9]"
+                className="w-4 h-4 rounded-sm border-slate-300 text-[#0284C7] focus:ring-0"
               />
-              <label htmlFor="rememberMe" className="ml-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
-                Recordarme en este dispositivo
+              <label htmlFor="rememberMe" className="ml-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+                Recordar mi sesión en este dispositivo
               </label>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-xl bg-[#0EA5E9] hover:bg-[#64748B] dark:bg-[#334155] dark:hover:bg-[#0F172A] text-white dark:text-[#E2E8F0] font-bold text-sm shadow-md shadow-emerald-900/20 transition-all hover:shadow-lg active:scale-98 cursor-pointer"
+              className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white py-2.5 rounded-md font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
             >
               Iniciar Sesión
             </button>
           </form>
 
-          <p className="text-center text-xs text-[#64748B] dark:text-[#94A3B8]">
-            ¿Aún no tienes cuenta?{' '}
+          <div className="text-center pt-2">
+            <span className="text-xs text-slate-500">¿No tienes cuenta todavía? </span>
             <button
               onClick={onNavigateRegister}
-              className="font-bold text-[#F97316] hover:underline cursor-pointer"
+              className="text-xs text-[#0284C7] hover:underline font-semibold cursor-pointer"
             >
-              Regístrate gratis
+              Crear una cuenta
             </button>
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -3517,51 +3264,50 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] grid grid-cols-1 lg:grid-cols-2">
+    <div className="min-h-[calc(100vh-64px)] grid grid-cols-1 lg:grid-cols-2">
       {/* Left Inspiration Split */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-[#0F172A] text-white overflow-hidden">
+      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-slate-900 text-white overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-55 scale-105 transition-transform duration-1000"
+          className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1200&q=80')`
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40" />
 
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 dark:bg-[#1E293B]/80 backdrop-blur-md text-xs font-semibold text-[#E2E8F0] border border-white/20 dark:border-[#334155]">
-            <span>✨</span> Club Exclusivo Horizonte Moderno 3D
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200">
+            <span>✈</span> Horizonte Moderno
           </div>
         </div>
 
         <div className="relative z-10 max-w-md">
-          <p className="text-2xl font-bold font-fraunces leading-relaxed mb-4 text-[#E2E8F0]">
-            "Comienza a coleccionar momentos, no cosas."
-          </p>
-          <p className="text-sm text-[#94A3B8]">
-            Crea tu cuenta hoy y recibe al instante 2,500 puntos de bienvenida para canjear en tus paquetes vacacionales preferidos.
+          <h2 className="text-2xl font-bold leading-snug mb-3 text-white">
+            Creá tu cuenta para gestionar tus itinerarios y pedidos
+          </h2>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Formá parte de la red de viajeros. Obtené acceso inmediato a seguimiento de compras, vouchers digitales y asistencia personalizada.
           </p>
         </div>
 
-        <div className="relative z-10 text-xs text-[#94A3B8]/80 font-mono">
-          © 2026 Horizonte Moderno. Tu próximo destino comienza aquí.
+        <div className="relative z-10 text-xs text-slate-500 font-mono">
+          © 2026 Horizonte Moderno · Sistema de Gestión Turística
         </div>
       </div>
 
       {/* Right Form Split */}
-      <div className="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-white dark:bg-[#0F172A] transition-colors">
-        <div className="w-full max-w-md space-y-6">
+      <div className="flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-white dark:bg-slate-950 transition-colors">
+        <div className="w-full max-w-sm space-y-6">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9] dark:text-[#94A3B8]">Regístrate en segundos</span>
-            <h2 className="text-3xl font-extrabold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces mt-1">Crear Cuenta</h2>
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-2">
-              Únete gratis a Horizonte Moderno y descubre una nueva manera inmersiva de viajar por el mundo.
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Crear Cuenta</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Completá tus datos para registrarte en la plataforma.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMsg && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-300 text-xs font-medium flex items-center gap-2">
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-md text-red-700 dark:text-red-300 text-xs font-medium flex items-center gap-2">
                 <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -3570,7 +3316,7 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
             )}
 
             <div>
-              <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Nombre Completo
               </label>
               <input
@@ -3579,12 +3325,12 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Ej: María González"
-                className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#1E293B] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#F97316] transition"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7] transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Correo Electrónico
               </label>
               <input
@@ -3593,12 +3339,12 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="maria@ejemplo.com"
-                className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#1E293B] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#F97316] transition"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7] transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Contraseña (mínimo 6 caracteres)
               </label>
               <input
@@ -3607,17 +3353,17 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#1E293B] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#F97316] transition"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7] transition"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Confirmar Contraseña
                 </label>
                 {confirmPassword.length > 0 && (
-                  <span className={`text-[11px] font-semibold ${passwordsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                  <span className={`text-[11px] font-medium ${passwordsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
                     {passwordsMatch ? '✓ Coinciden' : '✗ No coinciden'}
                   </span>
                 )}
@@ -3628,10 +3374,10 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full px-4 py-3 rounded-xl border bg-[#F8FAFC] dark:bg-[#1E293B] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 transition ${
+                className={`w-full px-3 py-2 rounded-md border bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden transition ${
                   confirmPassword.length > 0 && !passwordsMatch
-                    ? 'border-red-400 focus:ring-red-400'
-                    : 'border-[#E2E8F0] dark:border-[#334155] focus:ring-[#F97316]'
+                    ? 'border-red-400 focus:border-red-500'
+                    : 'border-slate-200 dark:border-slate-700 focus:border-[#0284C7]'
                 }`}
               />
             </div>
@@ -3643,34 +3389,33 @@ function RegisterPage({ onRegisterSuccess, onNavigateLogin, onNavigateTerms }: R
                 required
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="w-4 h-4 mt-0.5 text-[#F97316] rounded-sm border-[#E2E8F0] dark:border-[#334155] focus:ring-[#F97316]"
+                className="w-4 h-4 mt-0.5 rounded-sm border-slate-300 text-[#0284C7] focus:ring-0"
               />
-              <label htmlFor="terms" className="ml-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <label htmlFor="terms" className="ml-2 text-xs text-slate-600 dark:text-slate-400">
                 Acepto los{' '}
-                <button type="button" onClick={onNavigateTerms} className="text-[#0EA5E9] dark:text-[#38BDF8] underline font-semibold cursor-pointer">Términos del Servicio</button>{' '}
+                <button type="button" onClick={onNavigateTerms} className="text-[#0284C7] hover:underline font-medium cursor-pointer">Términos del Servicio</button>{' '}
                 y la{' '}
-                <button type="button" onClick={onNavigateTerms} className="text-[#0EA5E9] dark:text-[#38BDF8] underline font-semibold cursor-pointer">Política de Privacidad</button>{' '}
-                de Horizonte Moderno.
+                <button type="button" onClick={onNavigateTerms} className="text-[#0284C7] hover:underline font-medium cursor-pointer">Política de Privacidad</button>.
               </label>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-sm shadow-md shadow-orange-500/25 transition-all hover:shadow-lg active:scale-98 cursor-pointer"
+              className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white py-2.5 rounded-md font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
             >
-              Crear cuenta gratis
+              Crear cuenta
             </button>
           </form>
 
-          <p className="text-center text-xs text-[#64748B] dark:text-[#94A3B8]">
-            ¿Ya tienes una cuenta registrada?{' '}
+          <div className="text-center pt-2">
+            <span className="text-xs text-slate-500">¿Ya tienes una cuenta registrada? </span>
             <button
               onClick={onNavigateLogin}
-              className="font-bold text-[#0EA5E9] dark:text-[#E2E8F0] hover:underline cursor-pointer"
+              className="text-xs text-[#0284C7] hover:underline font-semibold cursor-pointer"
             >
-              Inicia sesión aquí
+              Iniciar sesión
             </button>
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -3714,151 +3459,145 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
   const nextTrip = upcomingTrips[0];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
       {/* Header Greeting */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] dark:border-[#334155] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <span className="text-xs font-bold text-[#0EA5E9] dark:text-[#94A3B8] uppercase tracking-wider">Panel del Viajero 3D</span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces mt-1">
-            Hola, {user.name} 👋
+          <span className="text-xs font-semibold text-[#0284C7] dark:text-sky-400 uppercase tracking-wider">
+            Área de Clientes
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
+            Panel del Viajero: {user.name}
           </h1>
-          <p className="text-[#64748B] dark:text-[#94A3B8] text-sm mt-1">
-            Tienes {upcomingTrips.length} viaje{upcomingTrips.length === 1 ? '' : 's'} programado{upcomingTrips.length === 1 ? '' : 's'}. ¡Tus billetes 3D están listos!
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+            Gestioná tus reservas, revisá el estado de entrega de tus pedidos y consultá tus tarjetas de embarque.
           </p>
         </div>
 
         <button
           onClick={onNewBooking}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#0EA5E9] hover:bg-[#64748B] dark:bg-[#334155] dark:hover:bg-[#0F172A] text-white dark:text-[#E2E8F0] font-bold text-sm shadow-md shadow-emerald-900/20 hover:shadow-lg transition cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-xs sm:text-sm transition cursor-pointer shadow-xs"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Nueva reserva
         </button>
       </div>
 
-      {/* PASAPORTE DIGITAL 3D GAMIFICADO */}
+      {/* PERFIL DE VIAJERO */}
       <Passport3D user={user} />
 
-      {/* 4 STAT CARDS CON 3D TILT */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <TiltCard maxTilt={10}>
-          <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm flex items-center gap-4 h-full">
-            <div className="w-12 h-12 rounded-xl bg-[#F1F5F9] dark:bg-[#0F172A] text-[#0EA5E9] dark:text-[#94A3B8] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#334155]">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold uppercase tracking-wider">Viajes Realizados</p>
-              <p className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0] mt-0.5">{completedTrips.length} viajes</p>
-            </div>
+      {/* 4 STAT METRICS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-        </TiltCard>
+          <div>
+            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Viajes Realizados</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{completedTrips.length} viajes</p>
+          </div>
+        </div>
 
-        <TiltCard maxTilt={10}>
-          <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm flex items-center gap-4 h-full">
-            <div className="w-12 h-12 rounded-xl bg-orange-50 dark:bg-[#0F172A] text-[#F97316] flex items-center justify-center shrink-0 border border-orange-200 dark:border-[#334155]">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold uppercase tracking-wider">Próximo Viaje</p>
-              <p className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0] mt-0.5">
-                {nextTrip ? nextTrip.departureDate.split(',')[0] : 'Sin viajes'}
-              </p>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400 flex items-center justify-center shrink-0 border border-orange-100 dark:border-orange-900/40">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
           </div>
-        </TiltCard>
+          <div>
+            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Próximo Viaje</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {nextTrip ? nextTrip.departureDate.split(',')[0] : 'Sin viajes'}
+            </p>
+          </div>
+        </div>
 
-        <TiltCard maxTilt={10}>
-          <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm flex items-center gap-4 h-full">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-[#0F172A] text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-[#334155]">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold uppercase tracking-wider">Países Visitados</p>
-              <p className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0] mt-0.5">3 países</p>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-900/40">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
           </div>
-        </TiltCard>
+          <div>
+            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Países Visitados</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">3 países</p>
+          </div>
+        </div>
 
-        <TiltCard maxTilt={10}>
-          <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm flex items-center gap-4 h-full">
-            <div className="w-12 h-12 rounded-xl bg-[#F1F5F9] dark:bg-[#0F172A] text-[#0EA5E9] dark:text-[#94A3B8] flex items-center justify-center shrink-0 border border-[#E2E8F0] dark:border-[#334155]">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] font-semibold uppercase tracking-wider">Puntos Horizonte</p>
-              <p className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0] mt-0.5">
-                {user.points.toLocaleString()} pts
-              </p>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-        </TiltCard>
+          <div>
+            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Puntos Horizonte</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              {user.points.toLocaleString()} pts
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* FEATURED 3D BOARDING PASS DEL PRÓXIMO VIAJE */}
+      {/* FEATURED BOARDING PASS DEL PRÓXIMO VIAJE */}
       {nextTrip && (
-        <div className="space-y-4">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#F97316]">
-            Tu Próximo Itinerario en 3D
+        <div className="space-y-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Próximo Itinerario Confirmado
           </span>
           <BoardingPass3D trip={nextTrip} user={user} />
         </div>
       )}
 
       {/* TRIPS LIST WITH TABS */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#334155] overflow-x-auto pb-1">
+      <div className="space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-1">
           <div className="flex gap-4 sm:gap-6 min-w-max">
             <button
               onClick={() => setActiveTab('pedidos')}
-              className={`pb-4 text-sm font-bold border-b-2 transition cursor-pointer flex items-center gap-2 ${
+              className={`pb-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-2 ${
                 activeTab === 'pedidos'
-                  ? 'border-[#0EA5E9] text-[#0EA5E9] dark:text-[#38BDF8]'
-                  : 'border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
+                  ? 'border-[#0284C7] text-[#0284C7] dark:text-sky-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <span>⏳ Pedidos Pendientes de Entrega (1.3.3)</span>
+              <span>Pedidos Pendientes de Entrega (1.3.3)</span>
               {pendingOrders.length > 0 && (
-                <span className="px-2 py-0.5 text-xs bg-[#F97316] text-white rounded-full font-extrabold animate-pulse">
+                <span className="px-2 py-0.5 text-xs bg-[#EA580C] text-white rounded-full font-bold">
                   {pendingOrders.length}
                 </span>
               )}
             </button>
             <button
               onClick={() => setActiveTab('upcoming')}
-              className={`pb-4 text-sm font-bold border-b-2 transition cursor-pointer ${
+              className={`pb-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer ${
                 activeTab === 'upcoming'
-                  ? 'border-[#0EA5E9] dark:border-[#94A3B8] text-[#0EA5E9] dark:text-[#E2E8F0]'
-                  : 'border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
+                  ? 'border-[#0284C7] text-[#0284C7] dark:text-sky-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Itinerarios 3D Confirmados ({upcomingTrips.length})
+              Itinerarios Confirmados ({upcomingTrips.length})
             </button>
             <button
               onClick={() => setActiveTab('completed')}
-              className={`pb-4 text-sm font-bold border-b-2 transition cursor-pointer ${
+              className={`pb-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer ${
                 activeTab === 'completed'
-                  ? 'border-[#0EA5E9] dark:border-[#94A3B8] text-[#0EA5E9] dark:text-[#E2E8F0]'
-                  : 'border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
+                  ? 'border-[#0284C7] text-[#0284C7] dark:text-sky-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Completados ({completedTrips.length})
             </button>
             <button
               onClick={() => setActiveTab('cancelled')}
-              className={`pb-4 text-sm font-bold border-b-2 transition cursor-pointer ${
+              className={`pb-3 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer ${
                 activeTab === 'cancelled'
-                  ? 'border-[#0EA5E9] dark:border-[#94A3B8] text-[#0EA5E9] dark:text-[#E2E8F0]'
-                  : 'border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#1E293B] dark:hover:text-white'
+                  ? 'border-[#0284C7] text-[#0284C7] dark:text-sky-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Cancelados ({cancelledTrips.length})
@@ -3868,14 +3607,14 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
 
         {/* CONTENIDO SEGÚN TAB */}
         {activeTab === 'pedidos' ? (
-          <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-              <span className="text-xl">ℹ️</span>
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/40 flex items-start gap-3">
+              <span className="text-base text-[#0284C7]">ℹ</span>
               <div className="text-xs text-slate-700 dark:text-slate-300">
-                <strong className="text-amber-600 dark:text-amber-400 font-bold block">
-                  Seguimiento de Órdenes - Requisitos 1.3.3 y 1.3.4 del Pliego
+                <strong className="text-[#0284C7] dark:text-sky-300 font-semibold block mb-0.5">
+                  Seguimiento de Órdenes (Requisitos 1.3.3 y 1.3.4)
                 </strong>
-                Tus compras se registran formalmente como <strong>"Pendiente de Entrega"</strong> hasta que el sector de reservas y el Jefe de Ventas validan los cupos con los prestadores y emiten los vouchers definitivos. Puedes modificar indicaciones o cancelar tu orden mientras esté pendiente.
+                Tus compras se registran como <strong>"Pendiente de Entrega"</strong> hasta que el sector de reservas y el Jefe de Ventas validan los cupos y entregan los vouchers. Puedes modificar indicaciones o cancelar tu orden mientras esté pendiente.
               </div>
             </div>
 
@@ -3884,44 +3623,39 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                 {myOrders.map((ord) => (
                   <div
                     key={ord.id}
-                    className="p-6 rounded-3xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition space-y-4"
+                    className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/5 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-[#0EA5E9] flex items-center justify-center font-bold text-sm">
-                          📦
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-[#0EA5E9] text-sm">
-                              #{ord.id}
-                            </span>
-                            <span className="text-xs text-slate-400 font-mono">
-                              (Factura: #{ord.nroFactura})
-                            </span>
-                          </div>
-                          <span className="text-xs text-slate-500">
-                            Registrado el {new Date(ord.fecha).toLocaleString()}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
+                            Orden #{ord.id}
+                          </span>
+                          <span className="text-xs text-slate-400 font-mono">
+                            (Factura: #{ord.nroFactura})
                           </span>
                         </div>
+                        <span className="text-xs text-slate-500">
+                          Registrado el {new Date(ord.fecha).toLocaleString()}
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         {ord.estado === 'pendiente_entrega' && (
-                          <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 animate-pulse">
-                            <span>⏳</span>
+                          <span className="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 text-xs font-medium flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             <span>Pendiente de Entrega (1.3.3)</span>
                           </span>
                         )}
                         {ord.estado === 'entregado' && (
-                          <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
-                            <span>✅</span>
+                          <span className="px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 text-xs font-medium flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             <span>Entregado / Despachado (1.4.4)</span>
                           </span>
                         )}
                         {ord.estado === 'anulado' && (
-                          <span className="px-3 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5">
-                            <span>🚫</span>
+                          <span className="px-2.5 py-1 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40 text-xs font-medium flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                             <span>Cancelado (1.3.4)</span>
                           </span>
                         )}
@@ -3931,7 +3665,7 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                     {/* Items List */}
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs text-left">
-                        <thead className="text-slate-400 uppercase border-b border-slate-100 dark:border-white/5 font-semibold text-[10px]">
+                        <thead className="text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800 font-semibold text-[10px]">
                           <tr>
                             <th className="py-2">Código</th>
                             <th className="py-2">Descripción</th>
@@ -3940,22 +3674,22 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                             <th className="py-2 text-right">Subtotal</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                           {ord.items.map((it, idx) => (
                             <tr key={idx}>
-                              <td className="py-2.5 font-mono font-semibold text-slate-600 dark:text-slate-300">
+                              <td className="py-2 font-mono font-medium text-slate-600 dark:text-slate-400">
                                 {it.codigoProducto}
                               </td>
-                              <td className="py-2.5 font-medium text-slate-800 dark:text-white">
+                              <td className="py-2 font-medium text-slate-800 dark:text-slate-200">
                                 {it.descripcion}
                               </td>
-                              <td className="py-2.5 text-center font-bold">
+                              <td className="py-2 text-center font-semibold">
                                 {it.cantidad}
                               </td>
-                              <td className="py-2.5 text-right text-slate-500">
+                              <td className="py-2 text-right text-slate-500">
                                 ${it.precioUnitario.toLocaleString()} USD
                               </td>
-                              <td className="py-2.5 text-right font-bold text-[#F97316]">
+                              <td className="py-2 text-right font-bold text-[#EA580C]">
                                 ${it.subtotal.toLocaleString()} USD
                               </td>
                             </tr>
@@ -3965,30 +3699,30 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                     </div>
 
                     {/* Footer / Notes & Actions */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div>
-                        <span className="text-slate-500 block">
+                        <span className="text-slate-400 block font-medium">
                           Indicaciones / Notas del Cliente:
                         </span>
-                        <span className="text-slate-700 dark:text-slate-300 font-medium italic">
+                        <span className="text-slate-700 dark:text-slate-300 font-medium">
                           {ord.notas || 'Sin indicaciones especiales.'}
                         </span>
                         {ord.motivoAnulacion && (
-                          <div className="text-rose-500 text-[11px] mt-1 font-semibold">
+                          <div className="text-rose-600 dark:text-rose-400 text-xs mt-1 font-medium">
                             Motivo de cancelación: {ord.motivoAnulacion}
                           </div>
                         )}
                         {ord.fechaEntrega && (
-                          <div className="text-emerald-500 text-[11px] mt-1 font-semibold">
+                          <div className="text-emerald-600 dark:text-emerald-400 text-xs mt-1 font-medium">
                             Entregado el: {new Date(ord.fechaEntrega).toLocaleString()} por {ord.responsableEntrega || 'Ventas'}
                           </div>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-center">
-                        <div className="text-right pr-2 mr-2 border-r border-slate-200 dark:border-white/10">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Total</span>
-                          <span className="text-base font-extrabold text-[#F97316] font-fraunces">
+                        <div className="text-right pr-3 mr-2 border-r border-slate-200 dark:border-slate-700">
+                          <span className="text-[10px] uppercase font-semibold text-slate-400 block">Total</span>
+                          <span className="text-base font-bold text-[#EA580C]">
                             ${ord.total.toLocaleString()} USD
                           </span>
                         </div>
@@ -4000,11 +3734,10 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                                 setEditingOrder(ord);
                                 setEditNotes(ord.notas || '');
                               }}
-                              className="px-3 py-2 rounded-xl border border-sky-300 dark:border-sky-500/30 text-[#0EA5E9] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition cursor-pointer"
                               title="Modificar observaciones o indicaciones (Requisito 1.3.4)"
                             >
-                              <span>✏️</span>
-                              <span>Modificar</span>
+                              Modificar
                             </button>
 
                             <button
@@ -4016,11 +3749,10 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                                   alert('La orden ha sido cancelada con éxito y el stock fue liberado.');
                                 }
                               }}
-                              className="px-3 py-2 rounded-xl border border-rose-300 dark:border-rose-500/30 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              className="px-2.5 py-1.5 rounded-md border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-medium transition cursor-pointer"
                               title="Cancelar este pedido (Requisito 1.3.4)"
                             >
-                              <span>❌</span>
-                              <span>Cancelar</span>
+                              Cancelar
                             </button>
                           </>
                         )}
@@ -4030,17 +3762,16 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
                 ))}
               </div>
             ) : (
-              <div className="bg-[#F1F5F9]/40 dark:bg-[#1E293B] rounded-2xl border border-dashed border-[#E2E8F0] dark:border-[#334155] p-12 text-center">
-                <span className="text-4xl block mb-3">🛍️</span>
-                <h3 className="text-lg font-bold text-[#1E293B] dark:text-[#E2E8F0]">
+              <div className="bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-10 text-center">
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
                   No tienes pedidos pendientes de entrega
                 </h3>
-                <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-1 max-w-sm mx-auto">
-                  Agrega servicios al carrito o reserva un paquete para que se registre tu orden de compra formal.
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  Agrega servicios al carrito o reserva un paquete para que se registre tu orden formal.
                 </p>
                 <button
                   onClick={onNewBooking}
-                  className="mt-6 px-6 py-2.5 rounded-xl bg-[#F97316] text-white text-xs font-bold shadow-md hover:bg-[#EA580C] transition cursor-pointer"
+                  className="mt-4 px-4 py-2 rounded-lg bg-[#0284C7] text-white text-xs font-semibold hover:bg-[#0369A1] transition cursor-pointer"
                 >
                   Ver Catálogo de Servicios
                 </button>
@@ -4349,49 +4080,47 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* SIDEBAR */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* User Card con 3D Tilt */}
-          <TiltCard maxTilt={8}>
-            <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm text-center">
-              <div className="relative inline-block mx-auto mb-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0EA5E9] to-[#F97316] dark:from-[#334155] dark:to-[#94A3B8] text-white font-extrabold text-2xl flex items-center justify-center shadow-lg shadow-emerald-950/20">
-                  {user.avatarInitials}
+        <div className="lg:col-span-1 space-y-4">
+          {/* User Card */}
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+            <div className="relative inline-block mx-auto mb-3">
+              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xl flex items-center justify-center">
+                {user.avatarInitials}
+              </div>
+              {user.verified && (
+                <div
+                  className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#0284C7] text-white border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold"
+                  title="Cuenta verificada"
+                >
+                  ✓
                 </div>
-                {user.verified && (
-                  <div
-                    className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0EA5E9] dark:bg-[#334155] text-white border-2 border-white dark:border-[#0F172A] flex items-center justify-center text-xs"
-                    title="Cuenta verificada"
-                  >
-                    ✓
-                  </div>
-                )}
-              </div>
-
-              <h3 className="text-lg font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces">
-                {user.name} {user.lastName}
-              </h3>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-0.5 truncate">{user.email}</p>
-
-              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F1F5F9] dark:bg-[#0F172A] text-[#0EA5E9] dark:text-[#E2E8F0] text-xs font-semibold border border-[#E2E8F0] dark:border-[#334155]">
-                <svg className="w-3.5 h-3.5 text-[#0EA5E9] dark:text-[#94A3B8]" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Cuenta Verificada</span>
-              </div>
+              )}
             </div>
-          </TiltCard>
+
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              {user.name} {user.lastName}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{user.email}</p>
+
+            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[11px] font-medium border border-emerald-200 dark:border-emerald-800/60">
+              <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span>Cuenta Verificada</span>
+            </div>
+          </div>
 
           {/* Navigation Menu */}
-          <nav className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm overflow-hidden p-2 space-y-1">
+          <nav className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-1.5 space-y-1">
             <button
               onClick={() => setProfileTab('personal')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer text-left ${
                 profileTab === 'personal'
-                  ? 'bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/50 dark:hover:bg-[#0F172A]'
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60'
               }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -4402,10 +4131,10 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
 
             <button
               onClick={() => setProfileTab('preferences')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer text-left ${
                 profileTab === 'preferences'
-                  ? 'bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/50 dark:hover:bg-[#0F172A]'
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60'
               }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -4416,10 +4145,10 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
 
             <button
               onClick={() => setProfileTab('security')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer text-left ${
                 profileTab === 'security'
-                  ? 'bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                  : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/50 dark:hover:bg-[#0F172A]'
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60'
               }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -4430,12 +4159,12 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
 
             <button
               onClick={onNavigateDashboard}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/50 dark:hover:bg-[#0F172A] transition cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer text-left"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              Mis viajes (3D Boarding Pass)
+              Mis viajes & vouchers
             </button>
           </nav>
         </div>
@@ -4443,119 +4172,119 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
         {/* MAIN CONTENT AREA */}
         <div className="lg:col-span-3 space-y-6">
           {profileTab === 'personal' && (
-            <div className="bg-white dark:bg-[#1E293B] p-6 sm:p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-6">
               <div>
-                <h2 className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Información Personal
                 </h2>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
-                  Actualiza tus datos para acelerar la emisión de tus futuros billetes y vouchers.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Actualizá tus datos para acelerar la emisión de tus futuros billetes y vouchers.
                 </p>
               </div>
 
-              <form onSubmit={handleSavePersonal} className="space-y-6">
+              <form onSubmit={handleSavePersonal} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Nombre
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Apellido
                     </label>
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Correo Electrónico
                     </label>
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Teléfono Móvil
                     </label>
                     <input
                       type="text"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       País de Residencia
                     </label>
                     <input
                       type="text"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Ciudad
                     </label>
                     <input
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Fecha de Nacimiento
                     </label>
                     <input
                       type="date"
                       value={birthDate}
                       onChange={(e) => setBirthDate(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Número de Pasaporte / Documento
                     </label>
                     <input
                       type="text"
                       value={passport}
                       onChange={(e) => setPassport(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                      className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-4 border-t border-[#E2E8F0] dark:border-[#334155]">
+                <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#0EA5E9] hover:bg-[#64748B] dark:bg-[#334155] dark:hover:bg-[#0F172A] text-white dark:text-[#E2E8F0] font-bold text-xs shadow-md shadow-emerald-900/20 transition active:scale-95 cursor-pointer"
+                    className="px-4 py-2 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-xs transition cursor-pointer"
                   >
                     Guardar cambios
                   </button>
@@ -4565,27 +4294,27 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
           )}
 
           {profileTab === 'preferences' && (
-            <div className="bg-white dark:bg-[#1E293B] p-6 sm:p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-6">
               <div>
-                <h2 className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Preferencias de Viaje
                 </h2>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
-                  Selecciona los tipos de experiencias que más disfrutas para recomendarte ofertas personalizadas.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Seleccioná los tipos de experiencias que más disfrutás para personalizar tus recomendaciones.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
                 {allPreferencesList.map((pref) => {
                   const isChecked = preferences.includes(pref);
                   return (
                     <label
                       key={pref}
                       onClick={() => togglePreference(pref)}
-                      className={`p-4 rounded-xl border text-sm font-semibold flex items-center justify-between cursor-pointer transition ${
+                      className={`p-3 rounded-lg border text-xs font-medium flex items-center justify-between cursor-pointer transition ${
                         isChecked
-                          ? 'border-[#0EA5E9] dark:border-[#94A3B8] bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                          : 'border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#0F172A] text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/40 dark:hover:bg-[#1E293B]'
+                          ? 'border-[#0284C7] bg-sky-50/50 dark:bg-sky-950/30 text-[#0284C7] dark:text-sky-300'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800'
                       }`}
                     >
                       <span>{pref}</span>
@@ -4593,18 +4322,18 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => {}}
-                        className="w-4 h-4 text-[#0EA5E9] dark:text-[#334155] rounded-sm focus:ring-[#0EA5E9]"
+                        className="w-4 h-4 text-[#0284C7] rounded-sm focus:ring-0"
                       />
                     </label>
                   );
                 })}
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-[#E2E8F0] dark:border-[#334155]">
+              <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={handleSavePersonal}
-                  className="px-6 py-2.5 rounded-xl bg-[#0EA5E9] hover:bg-[#64748B] dark:bg-[#334155] dark:hover:bg-[#0F172A] text-white dark:text-[#E2E8F0] font-bold text-xs shadow-md shadow-emerald-900/20 transition active:scale-95 cursor-pointer"
+                  className="px-4 py-2 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-xs transition cursor-pointer"
                 >
                   Guardar preferencias
                 </button>
@@ -4613,23 +4342,23 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
           )}
 
           {profileTab === 'security' && (
-            <div className="bg-white dark:bg-[#1E293B] p-6 sm:p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-6">
               <div>
-                <h2 className="text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Seguridad & Contraseña
                 </h2>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
-                  Mantén tu cuenta protegida cambiando periódicamente tu clave de acceso.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Mantené tu cuenta protegida actualizando periódicamente tu clave de acceso.
                 </p>
               </div>
 
               <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-md">
                 {securityFeedback && (
                   <div
-                    className={`p-3 rounded-xl text-xs font-semibold ${
+                    className={`p-3 rounded-md text-xs font-medium ${
                       securityFeedback.startsWith('✓')
                         ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                        : 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
+                        : 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
                     }`}
                   >
                     {securityFeedback}
@@ -4637,7 +4366,7 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Contraseña actual
                   </label>
                   <input
@@ -4646,12 +4375,12 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
                     value={currentPass}
                     onChange={(e) => setCurrentPass(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Nueva contraseña
                   </label>
                   <input
@@ -4660,12 +4389,12 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
                     value={newPass}
                     onChange={(e) => setNewPass(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Confirmar nueva contraseña
                   </label>
                   <input
@@ -4674,14 +4403,14 @@ function ProfilePage({ user, onUpdateUser, onNavigateDashboard }: ProfilePagePro
                     value={confirmNewPass}
                     onChange={(e) => setConfirmNewPass(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                   />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md shadow-orange-500/20 transition active:scale-95 cursor-pointer"
+                    className="px-4 py-2 rounded-md bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold text-xs transition cursor-pointer"
                   >
                     Actualizar contraseña
                   </button>
@@ -4852,84 +4581,80 @@ function CheckoutPage({
   // If payment done -> Success Screen
   if (paymentDone) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-8 animate-fadeIn">
-        <ConfettiCanvas />
-        <div className="w-24 h-24 bg-emerald-100 dark:bg-[#1E293B] text-emerald-600 dark:text-[#E2E8F0] rounded-full flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/20 border border-emerald-300 dark:border-[#334155] animate-bounce">
-          <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center space-y-6">
+        <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-200 dark:border-emerald-800">
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
         </div>
 
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold animate-pulse">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-xs font-semibold">
             <span>⏳</span>
-            <span>REGISTRADO COMO: PENDIENTE DE ENTREGA (Requisito 1.3.3)</span>
+            <span>ESTADO: PENDIENTE DE ENTREGA (Requisito 1.3.3)</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
-            ¡Tu compra ha sido procesada!
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+            Compra confirmada con éxito
           </h1>
-          <p className="text-[#64748B] dark:text-[#94A3B8] text-base max-w-xl mx-auto">
-            Tu pedido se ha registrado en el sistema comercial con estado <strong>"Pendiente de Entrega"</strong>. Nuestro equipo de ventas y el Jefe de Ventas procederán con la entrega formal y emisión de tus vouchers definitivos.
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm max-w-lg mx-auto">
+            El pedido ha sido asentado en el sistema con estado <strong>"Pendiente de Entrega"</strong>. El equipo de ventas verificará la disponibilidad y emitirá tus comprobantes oficiales.
           </p>
 
-          {/* Notificación de envío dual de correos auditados (Pliego de Requisitos pág. 2) */}
-          <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/40 text-left max-w-xl mx-auto flex items-start gap-3 text-xs">
-            <span className="text-xl">📬</span>
+          {/* Notificación de envío dual de correos auditados */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left max-w-lg mx-auto flex items-start gap-3 text-xs mt-4">
+            <span className="text-lg">📬</span>
             <div className="space-y-1">
-              <strong className="text-[#0EA5E9] font-bold block">
-                Sistema Automatizado de Correos & Auditoría (Pliego de Requisitos pág. 2)
+              <strong className="text-slate-900 dark:text-white font-semibold block">
+                Comprobante y Notificación Dual Despachada
               </strong>
-              <p className="text-slate-600 dark:text-slate-300">
-                Se despacharon automáticamente <strong>2 correos electrónicos</strong>: uno a tu casilla (<span className="font-mono text-slate-800 dark:text-white font-semibold">{email}</span>) y otro al <strong>Departamento de Ventas</strong> (<code>ventas@horizontemoderno.com</code>), quedando registrados en la tabla de auditoría del sistema.
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Se enviaron <strong>2 correos electrónicos</strong>: uno a tu casilla (<span className="font-mono text-slate-800 dark:text-slate-200 font-semibold">{email}</span>) y una copia para registro a <strong>ventas@horizontemoderno.com</strong>.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Booking Card Box con 3D Tilt */}
-        <TiltCard maxTilt={8} scale={1.02}>
-          <div className="bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-3xl p-6 sm:p-8 text-left space-y-4 shadow-xl max-w-xl mx-auto">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#334155] pb-4">
-              <div>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] uppercase font-bold tracking-wider">Código de Pedido / Reserva</p>
-                <p className="text-2xl font-mono font-bold text-[#0EA5E9] dark:text-[#E2E8F0]">#{bookingCode}</p>
-                <p className="text-[11px] font-mono text-slate-400">Factura Comercial: #{generatedInvoice}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] uppercase font-bold tracking-wider">Monto total abonado</p>
-                <p className="text-2xl font-bold font-fraunces text-[#F97316]">
-                  {formatPrice ? formatPrice(total) : `$${total.toLocaleString()} USD`}
-                </p>
-                <span className="text-[10px] text-slate-400 block capitalize">{paymentType} ({installments} cuotas)</span>
-              </div>
+        {/* Booking Card Box */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-left space-y-4 max-w-lg mx-auto shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Código de Reserva</p>
+              <p className="text-xl font-mono font-bold text-[#0284C7] dark:text-sky-400">#{bookingCode}</p>
+              <p className="text-[11px] font-mono text-slate-400">Factura: #{generatedInvoice}</p>
             </div>
-
-            <div className="flex items-center gap-4 pt-2">
-              <img src={pkg.image} alt={pkg.destination} className="w-16 h-16 rounded-xl object-cover shadow-md" />
-              <div>
-                <h4 className="font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces text-base">
-                  {isFromCart ? `Reserva Múltiple (${cartItems.length} servicios)` : pkg.title}
-                </h4>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">{passengers} viajeros · Cobertura y Asistencia 3D</p>
-              </div>
+            <div className="text-right">
+              <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">Total abonado</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">
+                {formatPrice ? formatPrice(total) : `$${total.toLocaleString()} USD`}
+              </p>
+              <span className="text-[11px] text-slate-400 block capitalize">{paymentType} ({installments} {installments === 1 ? 'pago' : 'cuotas'})</span>
             </div>
           </div>
-        </TiltCard>
+
+          <div className="flex items-center gap-3.5 pt-1">
+            <img src={pkg.image} alt={pkg.destination} className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-800" />
+            <div>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                {isFromCart ? `Reserva Múltiple (${cartItems.length} servicios)` : pkg.title}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{passengers} viajeros · Cobertura y asistencia incluida</p>
+            </div>
+          </div>
+        </div>
 
         {/* Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <button
             onClick={onGoToDashboard}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-bold text-sm shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-xs sm:text-sm transition cursor-pointer"
           >
-            <span>📋</span>
-            <span>Ver mis Pedidos Pendientes (1.3.3)</span>
+            Ver mis Pedidos Pendientes
           </button>
           <button
             onClick={onExploreMore}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] text-[#1E293B] dark:text-[#E2E8F0] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] font-bold text-sm transition cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs sm:text-sm transition cursor-pointer"
           >
-            Explorar más servicios en el catálogo
+            Explorar más servicios
           </button>
         </div>
       </div>
@@ -4937,34 +4662,34 @@ function CheckoutPage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
-      <div className="mb-8">
-        <span className="text-xs font-bold text-[#F97316] uppercase tracking-wider">Paso final 3D Secure</span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold font-fraunces text-[#1E293B] dark:text-[#E2E8F0] mt-1">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <div className="mb-6">
+        <span className="text-xs font-semibold text-[#0284C7] uppercase tracking-wider">Checkout Seguro</span>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
           Finalizar Reserva
         </h1>
-        <p className="text-[#64748B] dark:text-[#94A3B8] text-sm mt-1">
-          Completa los datos del viajero e interactúa con tu tarjeta 3D para confirmar tu compra.
+        <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+          Completá los datos del titular y el método de pago para confirmar tu compra.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         {/* LEFT 3/5: FORM */}
-        <form onSubmit={handleConfirmOrder} className="lg:col-span-3 space-y-8">
+        <form onSubmit={handleConfirmOrder} className="lg:col-span-3 space-y-6">
           {/* SECCIÓN 1: DATOS DEL VIAJERO */}
-          <div className="bg-white dark:bg-[#1E293B] p-6 sm:p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#E2E8F0] dark:border-[#334155] pb-4">
-              <div className="w-8 h-8 rounded-full bg-[#F1F5F9] dark:bg-[#0F172A] text-[#0EA5E9] dark:text-[#E2E8F0] font-bold text-xs flex items-center justify-center border border-[#E2E8F0] dark:border-[#334155]">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-center border border-slate-200 dark:border-slate-700">
                 1
               </div>
-              <h2 className="text-xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 Datos del Pasajero Titular
               </h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Nombre
                 </label>
                 <input
@@ -4972,12 +4697,12 @@ function CheckoutPage({
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Apellido
                 </label>
                 <input
@@ -4985,51 +4710,51 @@ function CheckoutPage({
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
-                  Correo Electrónico (para vouchers)
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Correo Electrónico
                 </label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
-                  Teléfono / WhatsApp
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Teléfono de Contacto
                 </label>
                 <input
                   type="text"
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
-                  Número de Pasaporte
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Número de Pasaporte / Documento
                 </label>
                 <input
                   type="text"
                   required
                   value={passport}
                   onChange={(e) => setPassport(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Nacionalidad
                 </label>
                 <input
@@ -5037,20 +4762,20 @@ function CheckoutPage({
                   required
                   value={nationality}
                   onChange={(e) => setNationality(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
             </div>
           </div>
 
-          {/* SECCIÓN 2: MÉTODO DE PAGO CON 3D FLIPPABLE CARD */}
-          <div className="bg-white dark:bg-[#1E293B] p-6 sm:p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-6">
-            <div className="flex items-center gap-3 border-b border-[#E2E8F0] dark:border-[#334155] pb-4">
-              <div className="w-8 h-8 rounded-full bg-[#F1F5F9] dark:bg-[#0F172A] text-[#0EA5E9] dark:text-[#E2E8F0] font-bold text-xs flex items-center justify-center border border-[#E2E8F0] dark:border-[#334155]">
+          {/* SECCIÓN 2: MÉTODO DE PAGO */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-center border border-slate-200 dark:border-slate-700">
                 2
               </div>
-              <h2 className="text-xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
-                Método de Pago 3D
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Método de Pago
               </h2>
             </div>
 
@@ -5059,50 +4784,50 @@ function CheckoutPage({
               <button
                 type="button"
                 onClick={() => setPaymentType('tarjeta')}
-                className={`py-3 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
                   paymentType === 'tarjeta'
-                    ? 'border-[#0EA5E9] dark:border-[#94A3B8] bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                    : 'border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#0F172A] text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/40 dark:hover:bg-[#1E293B]'
+                    ? 'border-[#0284C7] bg-sky-50/50 dark:bg-sky-950/30 text-[#0284C7] dark:text-sky-300 font-semibold'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
-                <span>Tarjeta de Crédito</span>
+                <span>Crédito</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentType('debito')}
-                className={`py-3 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
                   paymentType === 'debito'
-                    ? 'border-[#0EA5E9] dark:border-[#94A3B8] bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                    : 'border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#0F172A] text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/40 dark:hover:bg-[#1E293B]'
+                    ? 'border-[#0284C7] bg-sky-50/50 dark:bg-sky-950/30 text-[#0284C7] dark:text-sky-300 font-semibold'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Débito Directo</span>
+                <span>Débito</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPaymentType('transferencia')}
-                className={`py-3 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition cursor-pointer ${
+                className={`py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
                   paymentType === 'transferencia'
-                    ? 'border-[#0EA5E9] dark:border-[#94A3B8] bg-[#F1F5F9] dark:bg-[#334155] text-[#475569] dark:text-[#E2E8F0]'
-                    : 'border-[#E2E8F0] dark:border-[#334155] bg-white dark:bg-[#0F172A] text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9]/40 dark:hover:bg-[#1E293B]'
+                    ? 'border-[#0284C7] bg-sky-50/50 dark:bg-sky-950/30 text-[#0284C7] dark:text-sky-300 font-semibold'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                 </svg>
                 <span>Transferencia</span>
               </button>
             </div>
 
-            {/* DYNAMIC FLIPPABLE 3D CREDIT CARD WIDGET */}
+            {/* DYNAMIC CREDIT CARD WIDGET */}
             <Card3D
               cardNumber={cardNumber}
               cardHolder={cardHolder}
@@ -5113,9 +4838,9 @@ function CheckoutPage({
             />
 
             {/* Card Inputs */}
-            <div className="space-y-4 pt-2">
+            <div className="space-y-4 pt-1">
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Número de Tarjeta
                 </label>
                 <div className="relative">
@@ -5127,14 +4852,14 @@ function CheckoutPage({
                     onChange={handleCardNumberChange}
                     onFocus={() => setIsCardFlipped(false)}
                     placeholder="1234 5678 9012 3456"
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                   />
-                  <div className="absolute right-3 top-3 text-slate-400 dark:text-slate-500 text-xs">🔒 3D Secure</div>
+                  <div className="absolute right-3 top-2.5 text-slate-400 dark:text-slate-500 text-xs">🔒 Seguro</div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Nombre del Titular (como figura en la tarjeta)
                 </label>
                 <input
@@ -5144,13 +4869,13 @@ function CheckoutPage({
                   onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
                   onFocus={() => setIsCardFlipped(false)}
                   placeholder="MARÍA GONZÁLEZ"
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm uppercase focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm uppercase focus:outline-hidden focus:border-[#0284C7]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Vencimiento (MM/AA)
                   </label>
                   <input
@@ -5161,16 +4886,16 @@ function CheckoutPage({
                     onChange={handleExpiryChange}
                     onFocus={() => setIsCardFlipped(false)}
                     placeholder="12/28"
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider">
-                      Código CVV (3D)
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      Código CVV
                     </label>
-                    <span className="text-[10px] text-[#F97316]">Gira la tarjeta al enfocar</span>
+                    <span className="text-[10px] text-slate-400">Ver reverso</span>
                   </div>
                   <input
                     type="password"
@@ -5180,150 +4905,144 @@ function CheckoutPage({
                     onChange={(e) => setCvv(e.target.value.slice(0, 4))}
                     onFocus={() => setIsCardFlipped(true)}
                     placeholder="123"
-                    className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] text-sm font-mono focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8]"
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                   />
                 </div>
               </div>
 
               {/* Installments selector */}
               <div>
-                <label className="block text-xs font-bold text-[#475569] dark:text-[#94A3B8] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Plan de Cuotas
                 </label>
                 <select
                   value={installments}
                   onChange={(e) => setInstallments(Number(e.target.value))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#334155] text-sm bg-white dark:bg-[#0F172A] text-[#1E293B] dark:text-[#E2E8F0] focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#94A3B8] cursor-pointer"
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-xs sm:text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-[#0284C7] cursor-pointer"
                 >
                   <option value={1}>1 pago de ${total.toLocaleString()} USD (Sin interés)</option>
                   <option value={3}>3 cuotas fijas de ${(total / 3).toFixed(2)} USD</option>
                   <option value={6}>6 cuotas fijas de ${(total / 6).toFixed(2)} USD</option>
                   <option value={12}>12 cuotas fijas de ${(total / 12).toFixed(2)} USD</option>
-                  <option value={18}>18 cuotas fijas de ${(total / 18).toFixed(2)} USD (Especial)</option>
+                  <option value={18}>18 cuotas fijas de ${(total / 18).toFixed(2)} USD</option>
                 </select>
               </div>
             </div>
 
             {/* Confirm CTA Button */}
-            <div className="pt-4">
+            <div className="pt-3">
               <button
                 type="submit"
                 disabled={isProcessing}
-                className="w-full py-4 px-6 rounded-2xl bg-[#F97316] hover:bg-[#EA580C] text-white font-extrabold text-base shadow-lg shadow-orange-500/25 transition-all hover:shadow-xl active:scale-98 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3 px-4 rounded-md bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 shadow-xs"
               >
                 {isProcessing ? (
                   <>
-                    <svg className="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Procesando pago seguro 3D...</span>
+                    <span>Procesando pago...</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    <span>Confirmar pago 3D · ${total.toLocaleString()} USD</span>
+                    <span>Confirmar pago · ${total.toLocaleString()} USD</span>
                   </>
                 )}
               </button>
-              <p className="text-center text-[11px] text-[#64748B] dark:text-[#94A3B8] mt-2">
-                🔒 Certificación PCI-DSS Nivel 1 & 3D Secure. Cancelación flexible.
+              <p className="text-center text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+                🔒 Certificación PCI-DSS y encriptación de extremo a extremo.
               </p>
             </div>
           </div>
         </form>
 
-        {/* RIGHT 2/5: STICKY SUMMARY CON 3D TILT */}
-        <div className="lg:col-span-2 sticky top-28 space-y-6">
-          <TiltCard maxTilt={8} scale={1.01}>
-            <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-lg p-6 space-y-6">
-              {/* Urgency Badge */}
-              <div className="bg-orange-50 dark:bg-[#0F172A] border border-orange-200 dark:border-[#334155] text-[#F97316] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
-                <span className="animate-pulse">🔥</span>
-                <span>¡Solo 3 lugares disponibles a este precio!</span>
-              </div>
-
-              {/* Package Thumbnail & Title */}
-              <div className="flex gap-4">
-                <img
-                  src={pkg.image}
-                  alt={pkg.destination}
-                  className="w-24 h-24 rounded-xl object-cover shrink-0 shadow-md"
-                />
-                <div className="flex flex-col justify-center">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#0EA5E9] dark:text-[#94A3B8]">
-                    {pkg.tag}
-                  </span>
-                  <h3 className="font-bold text-[#1E293B] dark:text-[#E2E8F0] font-fraunces text-base leading-snug">
-                    {pkg.title}
-                  </h3>
-                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
-                    {pkg.destination}, {pkg.country} · {pkg.nights} noches
-                  </p>
-                </div>
-              </div>
-
-              {/* Included Chips */}
-              <div className="space-y-1.5 border-t border-[#E2E8F0] dark:border-[#334155] pt-4">
-                <span className="text-xs font-bold text-[#1E293B] dark:text-[#E2E8F0] block mb-1">Tu paquete incluye:</span>
-                {pkg.includes.map((inc, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
-                    <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{inc}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Price Breakdown */}
-              <div className="border-t border-[#E2E8F0] dark:border-[#334155] pt-4 space-y-2 text-xs">
-                <div className="flex justify-between text-[#64748B] dark:text-[#94A3B8]">
-                  <span>Precio base unitario</span>
-                  <span>${pkg.price.toLocaleString()} USD</span>
-                </div>
-                <div className="flex justify-between text-[#64748B] dark:text-[#94A3B8]">
-                  <span>Pasajeros ({passengers} personas)</span>
-                  <span>${subtotal.toLocaleString()} USD</span>
-                </div>
-                <div className="flex justify-between text-[#64748B] dark:text-[#94A3B8]">
-                  <span>Tasas aeroportuarias & IVA</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">¡Incluidos!</span>
-                </div>
-                <div className="flex justify-between text-[#64748B] dark:text-[#94A3B8]">
-                  <span>Descuento Promo Online</span>
-                  <span className="text-[#F97316] font-semibold">-${discount} USD</span>
-                </div>
-
-                <div className="border-t border-[#E2E8F0] dark:border-[#334155] pt-3 flex justify-between items-baseline">
-                  <div>
-                    <span className="text-sm font-bold text-[#1E293B] dark:text-[#E2E8F0]">Total a pagar</span>
-                    {installments > 1 && (
-                      <span className="block text-[11px] text-[#64748B] dark:text-[#94A3B8]">
-                        {installments} cuotas de ${installmentAmount} USD
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-2xl font-extrabold text-[#0EA5E9] dark:text-[#E2E8F0] font-fraunces">
-                    ${total.toLocaleString()} USD
-                  </span>
-                </div>
-              </div>
-
-              {/* Guarantees */}
-              <div className="bg-[#F1F5F9] dark:bg-[#0F172A] p-4 rounded-xl text-[11px] text-[#64748B] dark:text-[#94A3B8] space-y-2 border border-[#E2E8F0] dark:border-[#334155]">
-                <div className="flex items-center gap-2 font-medium text-[#1E293B] dark:text-[#E2E8F0]">
-                  <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span>Reserva 100% Protegida por Horizonte Care</span>
-                </div>
-                <p>Emitimos de forma inmediata tus billetes 3D para que viajes con total serenidad y respaldo legal.</p>
+        {/* RIGHT 2/5: STICKY SUMMARY */}
+        <div className="lg:col-span-2 sticky top-24 space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 space-y-5 shadow-xs">
+            {/* Package Thumbnail & Title */}
+            <div className="flex gap-3.5">
+              <img
+                src={pkg.image}
+                alt={pkg.destination}
+                className="w-20 h-20 rounded-lg object-cover shrink-0 border border-slate-200 dark:border-slate-800"
+              />
+              <div className="flex flex-col justify-center">
+                <span className="text-[11px] font-semibold text-[#0284C7] dark:text-sky-400">
+                  {pkg.tag}
+                </span>
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-snug">
+                  {pkg.title}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {pkg.destination}, {pkg.country} · {pkg.nights} noches
+                </p>
               </div>
             </div>
-          </TiltCard>
+
+            {/* Included Chips */}
+            <div className="space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1">El servicio incluye:</span>
+              {pkg.includes.map((inc, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{inc}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Price Breakdown */}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Precio base unitario</span>
+                <span>${pkg.price.toLocaleString()} USD</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Pasajeros ({passengers} personas)</span>
+                <span>${subtotal.toLocaleString()} USD</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Tasas aeroportuarias & IVA</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">Incluidos</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Bonificación online</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">-${discount} USD</span>
+                </div>
+              )}
+
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-between items-baseline">
+                <div>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">Total a pagar</span>
+                  {installments > 1 && (
+                    <span className="block text-[11px] text-slate-500">
+                      {installments} cuotas de ${installmentAmount} USD
+                    </span>
+                  )}
+                </div>
+                <span className="text-xl font-bold text-[#0284C7] dark:text-sky-400">
+                  ${total.toLocaleString()} USD
+                </span>
+              </div>
+            </div>
+
+            {/* Guarantees */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg text-[11px] text-slate-600 dark:text-slate-400 space-y-1 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-1.5 font-medium text-slate-900 dark:text-white">
+                <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span>Garantía y Asistencia Operativa</span>
+              </div>
+              <p>Seguimiento continuo de tu itinerario y entrega formal auditada por el Jefe de Ventas.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -5468,31 +5187,31 @@ function TermsPage({ onNavigate }: TermsPageProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-10 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8 animate-fadeIn">
       {/* BREADCRUMB & HEADER */}
-      <div className="space-y-4 border-b border-slate-200 dark:border-white/10 pb-8">
-        <div className="flex items-center gap-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+      <div className="space-y-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
           <button
             onClick={() => onNavigate('home')}
-            className="hover:text-[#0EA5E9] dark:hover:text-[#38BDF8] transition cursor-pointer"
+            className="hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
           >
             Inicio
           </button>
           <span>/</span>
-          <span className="text-slate-400">Información Legal</span>
+          <span>Información Legal</span>
           <span>/</span>
-          <span className="text-[#0EA5E9] dark:text-[#38BDF8] font-bold">Términos y Condiciones</span>
+          <span className="text-slate-900 dark:text-white font-medium">Términos y Condiciones</span>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0EA5E9]/10 text-[#0EA5E9] text-xs font-bold uppercase tracking-wider mb-2 border border-[#0EA5E9]/20">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700 mb-2">
               <span>📋</span> Documento Oficial · Versión 4.2
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black font-fraunces text-[#1E293B] dark:text-[#E2E8F0] tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
               Términos y Condiciones Generales
             </h1>
-            <p className="text-[#64748B] dark:text-[#94A3B8] text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
               Bases contractuales, derechos del consumidor, políticas de cancelación y garantías para el uso de la plataforma y reservas en Horizonte Moderno.
             </p>
           </div>
@@ -5501,10 +5220,10 @@ function TermsPage({ onNavigate }: TermsPageProps) {
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => window.print()}
-              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-slate-800 text-xs font-bold text-[#1E293B] dark:text-[#E2E8F0] hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-2 cursor-pointer shadow-xs"
               title="Imprimir o guardar como PDF"
             >
-              <svg className="w-4 h-4 text-[#0EA5E9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3.5 h-3.5 text-[#0284C7]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               <span>Imprimir / PDF</span>
@@ -5512,97 +5231,89 @@ function TermsPage({ onNavigate }: TermsPageProps) {
 
             <button
               onClick={() => onNavigate('home')}
-              className="px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold transition shadow-md shadow-orange-500/20 cursor-pointer active:scale-95 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
-              <span>Volver a Paquetes</span>
+              <span>Volver a Servicios</span>
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 text-xs text-[#64748B] dark:text-[#94A3B8] pt-2">
-          <span>📅 <strong>Última actualización:</strong> 28 de Septiembre de 2026</span>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 pt-1">
+          <span>Última actualización: <strong>28 de Septiembre de 2026</strong></span>
           <span>•</span>
-          <span>🌍 <strong>Jurisdicción:</strong> Estándar Internacional & Protección al Consumidor</span>
+          <span>Jurisdicción: <strong>Estándar Internacional</strong></span>
           <span>•</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-            Vigente y certificado para reservas 3D
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+            Vigente y certificado
           </span>
         </div>
       </div>
 
-      {/* 4 HIGHLIGHT PILLARS CON 3D TILT */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <TiltCard maxTilt={8}>
-          <div className="p-5 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xs h-full flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-[#0EA5E9] flex items-center justify-center text-lg font-bold mb-3 border border-sky-200 dark:border-sky-800/40">
-              ⚡
-            </div>
-            <div>
-              <h4 className="font-bold text-sm text-[#1E293B] dark:text-[#E2E8F0]">Cancelación 24h Sin Costo</h4>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1.5 leading-relaxed">
-                Derecho a desistimiento total en las primeras 24 horas para reservas con más de 14 días de antelación.
-              </p>
-            </div>
+      {/* 4 HIGHLIGHT PILLARS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs h-full flex flex-col justify-between">
+          <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center text-base font-bold mb-3 border border-sky-100 dark:border-sky-900/40">
+            ⚡
           </div>
-        </TiltCard>
+          <div>
+            <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Cancelación 24h Sin Costo</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              Derecho a desistimiento total en las primeras 24 horas para reservas con más de 14 días de antelación.
+            </p>
+          </div>
+        </div>
 
-        <TiltCard maxTilt={8}>
-          <div className="p-5 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xs h-full flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-[#F97316] flex items-center justify-center text-lg font-bold mb-3 border border-orange-200 dark:border-orange-800/40">
-              🔐
-            </div>
-            <div>
-              <h4 className="font-bold text-sm text-[#1E293B] dark:text-[#E2E8F0]">Pagos 3D-Secure SSL</h4>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1.5 leading-relaxed">
-                Encriptación bancaria de 256 bits y verificación EMV 3D para transacciones libres de fraudes.
-              </p>
-            </div>
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs h-full flex flex-col justify-between">
+          <div className="w-9 h-9 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-[#EA580C] dark:text-orange-400 flex items-center justify-center text-base font-bold mb-3 border border-orange-100 dark:border-orange-900/40">
+            🔐
           </div>
-        </TiltCard>
+          <div>
+            <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Pagos Seguros SSL</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              Encriptación bancaria de 256 bits y verificación EMV para transacciones confiables.
+            </p>
+          </div>
+        </div>
 
-        <TiltCard maxTilt={8}>
-          <div className="p-5 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xs h-full flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold mb-3 border border-emerald-200 dark:border-emerald-800/40">
-              🏥
-            </div>
-            <div>
-              <h4 className="font-bold text-sm text-[#1E293B] dark:text-[#E2E8F0]">Horizonte Care Incluido</h4>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1.5 leading-relaxed">
-                Asistencia médica internacional hasta $50,000 USD y seguro de equipaje en todos los paquetes.
-              </p>
-            </div>
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs h-full flex flex-col justify-between">
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-base font-bold mb-3 border border-emerald-100 dark:border-emerald-900/40">
+            🏥
           </div>
-        </TiltCard>
+          <div>
+            <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Horizonte Care Incluido</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              Asistencia médica internacional hasta $50,000 USD y seguro de equipaje en todos los paquetes.
+            </p>
+          </div>
+        </div>
 
-        <TiltCard maxTilt={8}>
-          <div className="p-5 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xs h-full flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg font-bold mb-3 border border-purple-200 dark:border-purple-800/40">
-              🏷️
-            </div>
-            <div>
-              <h4 className="font-bold text-sm text-[#1E293B] dark:text-[#E2E8F0]">Precios Finales Sin Sorpresas</h4>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1.5 leading-relaxed">
-                Tasas aéreas, cargos de gestión e IVA incluidos desde el primer clic hasta la confirmación.
-              </p>
-            </div>
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs h-full flex flex-col justify-between">
+          <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-base font-bold mb-3 border border-slate-200 dark:border-slate-700">
+            🏷️
           </div>
-        </TiltCard>
+          <div>
+            <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Precios Finales Sin Sorpresas</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              Tasas aéreas, cargos de gestión e IVA incluidos desde el primer momento hasta la confirmación.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* TWO-COLUMN LAYOUT: STICKY TOC & SECTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* LEFT COLUMN: INDEX & SEARCH */}
-        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-28">
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-5 shadow-sm space-y-4">
+        <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Índice de Cláusulas
               </span>
-              <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-[#64748B] dark:text-[#94A3B8]">
+              <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">
                 8 Secciones
               </span>
             </div>
@@ -5614,15 +5325,15 @@ function TermsPage({ onNavigate }: TermsPageProps) {
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Buscar cláusula (ej. reembolso)..."
-                className="w-full bg-[#F8FAFC] dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-[#1E293B] dark:text-[#E2E8F0] placeholder-[#64748B] focus:outline-hidden focus:ring-2 focus:ring-[#0EA5E9]"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-[#0284C7]"
               />
-              <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               {searchFilter && (
                 <button
                   onClick={() => setSearchFilter('')}
-                  className="absolute right-2.5 top-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                  className="absolute right-2 top-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
                 >
                   ✕
                 </button>
@@ -5637,15 +5348,15 @@ function TermsPage({ onNavigate }: TermsPageProps) {
                   <button
                     key={sec.id}
                     onClick={() => scrollToSection(sec.id)}
-                    className={`w-full text-left p-2.5 rounded-xl text-xs font-medium transition cursor-pointer flex items-center gap-2.5 ${
+                    className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-2 ${
                       isActive
-                        ? 'bg-[#0EA5E9] text-white font-bold shadow-md shadow-sky-500/20'
-                        : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-slate-700/60 hover:text-[#1E293B] dark:hover:text-[#E2E8F0]'
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                     }`}
                   >
-                    <span className="text-sm shrink-0">{sec.icon}</span>
+                    <span className="text-xs shrink-0">{sec.icon}</span>
                     <span className="truncate flex-1">{sec.title}</span>
-                    <span className={`text-[10px] font-mono shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                    <span className={`text-[10px] font-mono shrink-0 ${isActive ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
                       {sec.number}
                     </span>
                   </button>
@@ -5653,7 +5364,7 @@ function TermsPage({ onNavigate }: TermsPageProps) {
               })}
 
               {filteredSections.length === 0 && (
-                <p className="text-xs text-slate-400 py-4 text-center">
+                <p className="text-xs text-slate-400 py-3 text-center">
                   No se encontraron cláusulas para "{searchFilter}".
                 </p>
               )}
@@ -5661,52 +5372,48 @@ function TermsPage({ onNavigate }: TermsPageProps) {
           </div>
 
           {/* Contact & Support Box */}
-          <div className="bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-2xl p-5 border border-slate-700 shadow-md space-y-3">
-            <div className="flex items-center gap-2 text-[#0EA5E9]">
-              <span className="text-base">⚖️</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Centro de Asesoría Legal</span>
+          <div className="bg-slate-900 text-white rounded-xl p-4 border border-slate-800 shadow-xs space-y-2.5">
+            <div className="flex items-center gap-2 text-sky-400">
+              <span className="text-sm">⚖️</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Asesoría Legal</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              ¿Tienes dudas o necesitas un certificado formal para presentar ante tu seguro o empleador? Nuestro equipo jurídico está a tu disposición.
+              ¿Tenés dudas o necesitás un certificado formal para presentar ante tu seguro o empleador? Nuestro equipo está a tu disposición.
             </p>
-            <div className="pt-2 border-t border-slate-800 space-y-1.5 text-xs text-slate-300 font-mono">
-              <p className="flex items-center gap-1.5">
-                <span className="text-[#0EA5E9]">✉</span> legal@horizontemoderno.com
-              </p>
-              <p className="flex items-center gap-1.5">
-                <span className="text-[#F97316]">☎</span> 0800-HORIZONTE (Gratuito 24/7)
-              </p>
+            <div className="pt-2 border-t border-slate-800 space-y-1 text-xs text-slate-300 font-mono">
+              <p>legal@horizontemoderno.com</p>
+              <p>0800-HORIZONTE (Disponible 24/7)</p>
             </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: DETAILED SECTIONS */}
-        <div className="lg:col-span-8 space-y-8">
+        <div className="lg:col-span-8 space-y-6">
           {filteredSections.map((sec) => (
             <div
               key={sec.id}
               id={sec.id}
-              className="scroll-mt-28 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 shadow-sm space-y-4 hover:border-[#0EA5E9]/40 transition-colors"
+              className="scroll-mt-24 bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
             >
-              <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-white/10 pb-4">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-[#0EA5E9] flex items-center justify-center text-lg font-bold border border-sky-200 dark:border-sky-800/30 shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-sm font-bold border border-slate-200 dark:border-slate-700 shrink-0">
                     {sec.icon}
                   </div>
                   <div>
-                    <span className="text-[10px] font-mono text-[#0EA5E9] dark:text-[#38BDF8] font-bold uppercase tracking-wider block">
+                    <span className="text-[10px] font-mono text-[#0284C7] dark:text-sky-400 font-semibold uppercase tracking-wider block">
                       Cláusula {sec.number}
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                       {sec.title}
                     </h3>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+              <div className="space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 {sec.content.map((paragraph, pIdx) => (
-                  <p key={pIdx} className="leading-relaxed">
+                  <p key={pIdx}>
                     {paragraph}
                   </p>
                 ))}
@@ -5715,32 +5422,30 @@ function TermsPage({ onNavigate }: TermsPageProps) {
           ))}
 
           {/* ACCEPTANCE CARD */}
-          <div className="bg-[#F8FAFC] dark:bg-slate-900/80 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 shadow-md space-y-4">
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
             <div className="flex items-start gap-3">
               <input
                 id="policy-consent"
                 type="checkbox"
                 checked={acceptedPolicy}
                 onChange={(e) => setAcceptedPolicy(e.target.checked)}
-                className="w-5 h-5 mt-0.5 text-[#F97316] rounded border-slate-300 focus:ring-[#F97316] cursor-pointer shrink-0"
+                className="w-4 h-4 mt-0.5 rounded-sm border-slate-300 text-[#0284C7] focus:ring-0 cursor-pointer shrink-0"
               />
-              <label htmlFor="policy-consent" className="text-xs sm:text-sm text-[#1E293B] dark:text-[#E2E8F0] cursor-pointer">
+              <label htmlFor="policy-consent" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                 He leído detenidamente las políticas de reserva, cancelación y cobertura del servicio de <strong>Horizonte Moderno</strong> y declaro estar conforme con sus términos.
               </label>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-slate-200 dark:border-white/10">
-              <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-                {acceptedPolicy ? '✓ Conformidad registrada en tu sesión actual.' : 'Marca la casilla para confirmar lectura.'}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-xs text-slate-500">
+                {acceptedPolicy ? '✓ Conformidad registrada en tu sesión actual.' : 'Marcá la casilla para confirmar lectura.'}
               </span>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  onClick={() => onNavigate('home')}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs shadow-md shadow-orange-500/25 transition cursor-pointer active:scale-95 text-center"
-                >
-                  Aceptar y Explorar Paquetes
-                </button>
-              </div>
+              <button
+                onClick={() => onNavigate('home')}
+                className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold text-xs transition cursor-pointer"
+              >
+                Aceptar y Explorar Servicios
+              </button>
             </div>
           </div>
         </div>
@@ -5751,83 +5456,80 @@ function TermsPage({ onNavigate }: TermsPageProps) {
 
 function Footer({ onNavigate }: { onNavigate: (page: PageType) => void }) {
   return (
-    <footer className="bg-[#1E293B] dark:bg-[#0F172A] text-white border-t border-[#475569] dark:border-[#334155] mt-auto transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+    <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 mt-auto transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Col 1: Brand */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3">
             <button
               onClick={() => onNavigate('home')}
               className="flex items-center gap-2 text-left cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0EA5E9] to-[#F97316] dark:from-[#334155] dark:to-[#94A3B8] flex items-center justify-center text-white">
-                <svg className="w-5 h-5 transform -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <div className="w-7 h-7 rounded-md bg-[#0284C7] flex items-center justify-center text-white">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </div>
-              <span className="text-2xl font-black font-fraunces">
-                <span className="text-white">Horizonte</span><span className="text-[#0EA5E9] ml-1">Moderno</span>
-                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-sm bg-[#F97316]/20 text-[#F97316] font-sans font-bold">3D</span>
+              <span className="text-lg font-bold text-white tracking-tight">
+                Horizonte Moderno
               </span>
             </button>
-            <p className="text-xs text-[#38BDF8] dark:text-[#94A3B8] max-w-sm leading-relaxed">
-              La plataforma líder en venta de paquetes turísticos prémium de América Latina. Conectamos sueños con los mejores destinos del planeta con tecnología inmersiva 3D.
+            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+              Plataforma de gestión de reservas, ventas turísticas y paquetes vacacionales integrales para la República Argentina y el mundo.
             </p>
-            <div className="flex items-center gap-3 pt-2">
-              <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">Síguenos en:</span>
-              <a href="#instagram" className="w-8 h-8 rounded-lg bg-white/10 dark:bg-[#1E293B] hover:bg-white/20 flex items-center justify-center text-[#E2E8F0] transition text-xs border border-white/10 dark:border-[#334155]">IG</a>
-              <a href="#facebook" className="w-8 h-8 rounded-lg bg-white/10 dark:bg-[#1E293B] hover:bg-white/20 flex items-center justify-center text-[#E2E8F0] transition text-xs border border-white/10 dark:border-[#334155]">FB</a>
-              <a href="#tiktok" className="w-8 h-8 rounded-lg bg-white/10 dark:bg-[#1E293B] hover:bg-white/20 flex items-center justify-center text-[#E2E8F0] transition text-xs border border-white/10 dark:border-[#334155]">TK</a>
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs text-slate-500">Redes:</span>
+              <a href="#instagram" className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 hover:text-white transition">Instagram</a>
+              <a href="#facebook" className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 hover:text-white transition">Facebook</a>
+              <a href="#linkedin" className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 hover:text-white transition">LinkedIn</a>
             </div>
           </div>
 
           {/* Col 2: Destinos */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">Destinos Top 3D</h4>
-            <ul className="space-y-2 text-xs text-[#38BDF8] dark:text-[#94A3B8]">
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white dark:hover:text-[#E2E8F0] transition">Cancún Todo Incluido</button></li>
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white dark:hover:text-[#E2E8F0] transition">París Romántico</button></li>
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white dark:hover:text-[#E2E8F0] transition">Bali & Templos</button></li>
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white dark:hover:text-[#E2E8F0] transition">Machu Picchu Mágico</button></li>
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white dark:hover:text-[#E2E8F0] transition">Santorini de Lujo</button></li>
-              <li><button onClick={() => onNavigate('home')} className="hover:text-white dark:hover:text-[#E2E8F0] transition">Dubai Futurista</button></li>
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Destinos Populares</h4>
+            <ul className="space-y-1.5 text-xs text-slate-400">
+              <li><button onClick={() => onNavigate('home')} className="hover:text-white transition">Cancún Todo Incluido</button></li>
+              <li><button onClick={() => onNavigate('home')} className="hover:text-white transition">París & Roma</button></li>
+              <li><button onClick={() => onNavigate('home')} className="hover:text-white transition">Bali & Templos</button></li>
+              <li><button onClick={() => onNavigate('home')} className="hover:text-white transition">Machu Picchu</button></li>
+              <li><button onClick={() => onNavigate('home')} className="hover:text-white transition">Santorini</button></li>
             </ul>
           </div>
 
           {/* Col 3: Empresa */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">Nosotros</h4>
-            <ul className="space-y-2 text-xs text-[#38BDF8] dark:text-[#94A3B8]">
-              <li><a href="#about" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Quiénes somos</a></li>
-              <li><a href="#press" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Prensa & Noticias</a></li>
-              <li><a href="#sustainability" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Turismo Sostenible</a></li>
-              <li><a href="#careers" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Trabaja con nosotros</a></li>
-              <li><a href="#agencies" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Agencias asociadas</a></li>
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Institucional</h4>
+            <ul className="space-y-1.5 text-xs text-slate-400">
+              <li><a href="#about" className="hover:text-white transition">Quiénes somos</a></li>
+              <li><a href="#press" className="hover:text-white transition">Prensa & Novedades</a></li>
+              <li><a href="#sustainability" className="hover:text-white transition">Turismo Sostenible</a></li>
+              <li><a href="#careers" className="hover:text-white transition">Trabajá con nosotros</a></li>
             </ul>
           </div>
 
           {/* Col 4: Soporte */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#E2E8F0]">Soporte & Ayuda</h4>
-            <ul className="space-y-2 text-xs text-[#38BDF8] dark:text-[#94A3B8]">
-              <li><a href="#help" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Centro de ayuda 24/7</a></li>
-              <li><a href="#status" className="hover:text-white dark:hover:text-[#E2E8F0] transition">Estado del vuelo</a></li>
-              <li><button onClick={() => onNavigate('terms')} className="hover:text-[#0EA5E9] dark:hover:text-[#38BDF8] transition cursor-pointer text-left">Políticas de cancelación</button></li>
-              <li><button onClick={() => onNavigate('terms')} className="hover:text-[#0EA5E9] dark:hover:text-[#38BDF8] transition cursor-pointer text-left">Términos y condiciones</button></li>
-              <li><button onClick={() => onNavigate('terms')} className="hover:text-[#0EA5E9] dark:hover:text-[#38BDF8] transition cursor-pointer text-left">Privacidad y cookies</button></li>
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Ayuda & Normativa</h4>
+            <ul className="space-y-1.5 text-xs text-slate-400">
+              <li><a href="#help" className="hover:text-white transition">Centro de ayuda 24/7</a></li>
+              <li><a href="#status" className="hover:text-white transition">Estado del servicio</a></li>
+              <li><button onClick={() => onNavigate('terms')} className="hover:text-white transition cursor-pointer text-left">Políticas de cancelación</button></li>
+              <li><button onClick={() => onNavigate('terms')} className="hover:text-white transition cursor-pointer text-left">Términos del servicio</button></li>
+              <li><button onClick={() => onNavigate('terms')} className="hover:text-white transition cursor-pointer text-left">Privacidad y datos</button></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-[#475569] dark:border-[#334155] mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B] dark:text-[#94A3B8]">
+        <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© 2026 Horizonte Moderno Inc. Todos los derechos reservados.</p>
-          <div className="flex items-center gap-4">
-            <span>Pagos seguros procesados con encriptación SSL de 256 bits y 3D-Secure</span>
-            <div className="flex gap-2 text-white dark:text-[#E2E8F0] font-mono text-[10px]">
-              <span className="bg-white/10 dark:bg-[#1E293B] px-2 py-0.5 rounded border border-white/10 dark:border-[#334155]">VISA</span>
-              <span className="bg-white/10 dark:bg-[#1E293B] px-2 py-0.5 rounded border border-white/10 dark:border-[#334155]">MASTERCARD</span>
-              <span className="bg-white/10 dark:bg-[#1E293B] px-2 py-0.5 rounded border border-white/10 dark:border-[#334155]">AMEX</span>
+          <div className="flex items-center gap-3">
+            <span>Operaciones protegidas con encriptación SSL de 256 bits</span>
+            <div className="flex gap-1.5 text-slate-400 font-mono text-[10px]">
+              <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">VISA</span>
+              <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">MC</span>
+              <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">AMEX</span>
             </div>
           </div>
         </div>
