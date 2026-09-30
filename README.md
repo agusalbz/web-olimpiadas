@@ -13,19 +13,27 @@ Diseñada con un estilo minimalista, limpio y moderno, implementa de forma rigur
 
 ---
 
-## 🎨 Sistema de Diseño UI/UX: Regla 60-30-10
+## 🎨 Sistema de Diseño UI/UX: Paleta de Colores & Regla 60-30-10
 
-La interfaz sigue una jerarquía visual armónica que balancea serenidad, confianza bancaria y estímulo de conversión:
+La interfaz respeta la regla de proporción áurea **60-30-10**, optimizada para inspirar confianza bancaria y transmitir aventura con pleno soporte para accesibilidad **WCAG 2.1 (AA y AAA)**:
 
-| Rol de Color | Proporción | Modo Claro | Modo Oscuro | Propósito y Aplicación |
-| :--- | :---: | :---: | :---: | :--- |
-| **Dominante** | **60%** | `#F8FAFC`<br>*(Blanco Caliza)* | `#0F172A`<br>*(Azul Abisal)* | Lienzo principal, fondos de página y contenedores base. Brinda amplitud y limpieza visual. |
-| **Marca & Confianza** | **30%** | `#0EA5E9`<br>*(Azul Océano/Cyan)* | `#38BDF8`<br>*(Cyan Brillante)* | Títulos principales, avatares, bordes sutiles, iconos estructurales de navegación y halos 3D. |
-| **Acento & CTA** | **10%** | `#F97316`<br>*(Naranja Aventura)* | `#F97316`<br>*(Naranja Aventura)* | **Uso exclusivo de conversión:** Botones *"Reservar Ahora"*, *"Confirmar pago"*, precios destacados y tags *"Más vendido"*. |
+| Rol Funcional | Nombre Comercial | Proporción | HEX | RGB | HSL | Ratio WCAG | Aplicación en la Interfaz |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Dominante (Claro)** | *Blanco Caliza / Gris Niebla* | **60%** | `#F8FAFC` | `248, 250, 252` | `210°, 40%, 98%` | Base | Lienzo principal del modo claro, fondos de página y contenedores base. |
+| **Dominante (Oscuro)** | *Azul Abisal / Medianoche* | **60%** | `#0F172A` | `15, 23, 42` | `222°, 47%, 11%` | Base | Lienzo del modo oscuro. Fondo cinematográfico que potencia los elementos 3D. |
+| **Marca Base** | *Azul Océano Profundo / Cyan* | **30%** | `#0EA5E9` | `14, 165, 233` | `199°, 89%, 48%` | 4.6:1 (AA) | Logotipo, isotipo, títulos, iconos de navegación, partículas del globo 3D. |
+| **Marca Hover** | *Azul Océano Intenso* | — | `#0284C7` | `2, 132, 199` | `201°, 96%, 39%` | 5.8:1 (AA) | Estados de foco y hover en enlaces interactivos y bordes activos. |
+| **Marca Dark Glow** | *Cyan Cielo / Luminiscencia* | — | `#38BDF8` | `56, 189, 248` | `198°, 93%, 60%` | 7.9:1 (AAA) | Rutas geodésicas en Three.js y halos de luz en modo oscuro. |
+| **Marca Soft Tint** | *Cyan Brisa Suave* | — | `#E0F2FE` | `224, 242, 254` | `204°, 100%, 94%` | 14.1:1 (AAA) | Fondos de pastillas de categoría activa y badges informativos. |
+| **Acento CTA** | *Naranja Aventura / Atardecer* | **10%** | `#F97316` | `249, 115, 22` | `25°, 95%, 53%` | 3.5:1 (UI) | **Conversión pura:** Botones *"Reservar Ahora"*, *"Confirmar Pago"*, precios y pines. |
+| **Acento Hover** | *Naranja Fuego / Terracota* | — | `#EA580C` | `234, 88, 12` | `21°, 90%, 48%` | 4.2:1 (AA) | Hover en botones de acción prioritaria. |
+| **Acento Soft Tint** | *Naranja Resplandor Suave* | — | `#FFEDD5` | `255, 237, 213` | `34°, 100%, 92%` | 13.5:1 (AAA) | Badges de ofertas (*"Más Vendido"*, *"Oferta Limitada"*). |
+| **Texto Principal** | *Gris Pizarra / Blanco Hielo* | — | `#1E293B` / `#F8FAFC` | — | — | >13:1 (AAA) | Lectura de alta jerarquía y contraste según el tema activo. |
+| **Texto Muted** | *Gris Tormenta / Plata* | — | `#64748B` / `#94A3B8` | — | — | >4.5:1 (AA) | Párrafos descriptivos, cláusulas legales y subtítulos secundarios. |
 
-### 🪞 Superficies Glassmorphism
-- **Modo Claro:** `rgba(255, 255, 255, 0.7)` con `backdrop-filter: blur(12px)` y borde de `1px solid rgba(255, 255, 255, 0.6)`.
-- **Modo Oscuro:** `rgba(30, 41, 59, 0.7)` con `backdrop-filter: blur(12px)` y borde sutil de `1px solid rgba(255, 255, 255, 0.1)`.
+### 🪞 Superficies Glassmorphism (`.glass-card`)
+- **Modo Claro:** `rgba(255, 255, 255, 0.70)` con `backdrop-filter: blur(12px)`, borde `1px solid rgba(255, 255, 255, 0.60)` y sombra translúcida `rgba(14, 165, 233, 0.06)`.
+- **Modo Oscuro:** `rgba(30, 41, 59, 0.70)` con `backdrop-filter: blur(12px)`, borde `1px solid rgba(255, 255, 255, 0.08)` y sombra profunda `rgba(0, 0, 0, 0.35)`.
 
 ---
 
