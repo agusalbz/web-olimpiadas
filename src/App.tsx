@@ -623,214 +623,6 @@ function ThreeGlobe({ isDarkMode, onSelectDestination, packages }: ThreeGlobePro
   );
 }
 
-// =========================================================
-// 💳 COMPONENTE 3D: FLIPPABLE CREDIT CARD EN 3D
-// =========================================================
-interface Card3DProps {
-  cardNumber: string;
-  cardHolder: string;
-  expiry: string;
-  cvv: string;
-  isFlipped: boolean;
-  onFlipToggle: () => void;
-}
-
-function Card3D({ cardNumber, cardHolder, expiry, cvv, isFlipped, onFlipToggle }: Card3DProps) {
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div
-        className="w-full max-w-sm h-52 perspective-1000 cursor-pointer select-none"
-        onClick={onFlipToggle}
-        title="Haz clic para voltear la tarjeta"
-      >
-        <div
-          style={{
-            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-            transition: 'transform 0.5s ease-out'
-          }}
-          className="relative w-full h-full preserve-3d rounded-xl shadow-md"
-        >
-          {/* FRONT FACE OF CARD */}
-          <div className="absolute inset-0 backface-hidden rounded-xl bg-slate-900 p-6 text-white flex flex-col justify-between overflow-hidden border border-slate-700">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-2.5">
-                {/* Clean EMV Chip */}
-                <div className="w-10 h-7 rounded-sm bg-amber-400/90 p-1 flex items-center justify-center border border-amber-600/40">
-                  <div className="w-full h-full border border-amber-900/30 rounded-2xs flex flex-col justify-between">
-                    <div className="border-b border-amber-900/30 h-1/2" />
-                  </div>
-                </div>
-                <span className="text-[11px] tracking-wider text-slate-400 uppercase font-medium">
-                  Horizonte Pay
-                </span>
-              </div>
-              <span className="text-lg font-bold tracking-wider text-white">VISA</span>
-            </div>
-
-            <div className="relative z-10">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
-                Número de tarjeta
-              </span>
-              <p className="text-lg font-mono tracking-widest text-white font-medium">
-                {cardNumber || '•••• •••• •••• ••••'}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between relative z-10 text-xs">
-              <div>
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Titular</span>
-                <p className="font-semibold tracking-wide truncate max-w-[180px] text-slate-100">
-                  {cardHolder || 'NOMBRE APELLIDO'}
-                </p>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Vence</span>
-                <p className="font-mono font-semibold text-slate-100">{expiry || 'MM/AA'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* BACK FACE OF CARD */}
-          <div
-            style={{ transform: 'rotateY(180deg)' }}
-            className="absolute inset-0 backface-hidden rounded-xl bg-slate-900 py-5 text-white flex flex-col justify-between overflow-hidden border border-slate-700"
-          >
-            {/* Magnetic Stripe */}
-            <div className="w-full h-10 bg-black/90" />
-
-            {/* Signature & CVV Panel */}
-            <div className="px-6 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-8 bg-slate-100 rounded-xs flex items-center justify-end px-3">
-                  <span className="font-mono font-bold text-slate-900 text-xs tracking-wider">
-                    {cvv ? `CVV: ${cvv}` : 'CVV: •••'}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-[9px] text-slate-400 leading-tight">
-                Transacción segura encriptada. No compartas tu código CVV.
-              </p>
-            </div>
-
-            <div className="px-6 flex justify-between items-center text-[10px] text-slate-400">
-              <span>Soporte: 0800-HORIZONTE</span>
-              <span className="font-mono font-medium">EMV</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Button to flip card */}
-      <button
-        type="button"
-        onClick={onFlipToggle}
-        className="px-3 py-1 rounded-md text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <span>{isFlipped ? 'Ver frente' : 'Girar para ver reverso (CVV)'}</span>
-      </button>
-    </div>
-  );
-}
-
-// =========================================================
-// 🎫 COMPONENTE 3D: BOARDING PASS ISOMÉTRICO EN 3D
-// =========================================================
-function BoardingPass3D({ trip, user }: { trip: Trip; user: User }) {
-  return (
-    <div className="w-full">
-      <div className="relative rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-400 flex items-center justify-center font-bold text-sm border border-sky-100 dark:border-sky-900/40">
-              ✈
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">
-                Vuelo Internacional Confirmado
-              </span>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {trip.title}
-              </h3>
-            </div>
-          </div>
-          <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-mono font-semibold">
-            TARJETA DE EMBARQUE
-          </span>
-        </div>
-
-        <div className="space-y-5">
-          {/* Route Graphic */}
-          <div className="flex items-center justify-between py-3 border-y border-dashed border-slate-200 dark:border-slate-800">
-            <div className="text-left">
-              <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">ORIG</span>
-              <p className="text-xs text-slate-500">Salida</p>
-              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mt-0.5">{trip.departureDate}</p>
-            </div>
-
-            <div className="flex-1 flex flex-col items-center px-4">
-              <div className="w-full flex items-center justify-center gap-2 text-xs text-slate-500">
-                <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
-                <span className="font-medium text-[11px] text-[#0284C7] dark:text-sky-400">✈ {trip.nights} Noches</span>
-                <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
-              </div>
-              <span className="text-[10px] text-slate-400 mt-1 font-mono uppercase">Directo · Clase Turista</span>
-            </div>
-
-            <div className="text-right">
-              <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">DEST</span>
-              <p className="text-xs text-slate-500">{trip.destination}</p>
-              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mt-0.5">{trip.returnDate}</p>
-            </div>
-          </div>
-
-          {/* Passenger & Booking Code */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-            <div>
-              <span className="text-[10px] uppercase text-slate-400 block font-medium">Pasajero</span>
-              <span className="font-semibold text-slate-900 dark:text-slate-100">{user.name} {user.lastName}</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase text-slate-400 block font-medium">Pasaporte</span>
-              <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{user.passport}</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase text-slate-400 block font-medium">Reserva</span>
-              <span className="font-mono font-bold text-[#EA580C]">#{trip.bookingCode}</span>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase text-slate-400 block font-medium">Asiento / Puerta</span>
-              <span className="font-semibold text-slate-900 dark:text-slate-100">12A · Puerta 4B</span>
-            </div>
-          </div>
-
-          {/* Barcode Strip */}
-          <div className="pt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-            <div className="flex gap-1 h-7 items-center opacity-70">
-              <div className="w-1 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-2 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-0.5 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-1.5 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-3 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-1 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-0.5 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-2 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-1.5 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-0.5 h-full bg-slate-800 dark:bg-slate-300" />
-              <div className="w-2 h-full bg-slate-800 dark:bg-slate-300" />
-            </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              VERIFICADO ELECTRÓNICAMENTE · HORIZONTE MODERNO
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // =========================================================
 // 🚀 MAIN APP COMPONENT
@@ -1642,112 +1434,7 @@ function PackageDetailModal({ pkg, currency, onClose, onBookNow }: PackageDetail
   );
 }
 
-// ==========================================
-// 🛂 COMPONENTE 3D: PASAPORTE GAMIFICADO
-// ==========================================
-function Passport3D({ user }: { user: User }) {
-  const stamps = [
-    { country: 'Cancún, México', date: '15 NOV 2025', code: 'CUN-ARR-01', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇲🇽', seal: 'CARIBE MAYA' },
-    { country: 'París, Francia', date: '20 MAY 2025', code: 'CDG-VIP-88', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇫🇷', seal: 'DOUANE ROISSY' },
-    { country: 'Bali, Indonesia', date: '14 SEP 2024', code: 'DPS-IMM-32', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇮🇩', seal: 'BALI PARADISE' },
-    { country: 'Machu Picchu, Perú', date: '04 FEB 2024', code: 'CUZ-VIP-77', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇵🇪', seal: 'SANTUARIO INCA' },
-    { country: 'Santorini, Grecia', date: '19 AGO 2023', code: 'JTR-PORT-11', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇬🇷', seal: 'AEGEAN ENTRY' },
-    { country: 'Dubai, EAU', date: '08 DIC 2022', code: 'DXB-FAST-99', color: 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300', icon: '🇦🇪', seal: 'DESERT LUXURY' },
-  ];
 
-  return (
-    <div className="w-full">
-      <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-[#0284C7] dark:text-sky-400 flex items-center justify-center font-bold text-base border border-sky-100 dark:border-sky-900/30">
-              ✈
-            </div>
-            <div>
-              <span className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase font-semibold block">
-                HORIZONTE CLUB · PROGRAMA DE VIAJEROS
-              </span>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Perfil del Pasajero & Membresía
-              </h3>
-            </div>
-          </div>
-          <span className="px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700">
-            Socio Platino
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-          {/* Left ID Credentials */}
-          <div className="md:col-span-5 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-lg bg-slate-800 text-white flex items-center justify-center text-sm font-semibold">
-                {user.avatarInitials}
-              </div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 block font-medium">Titular de cuenta</span>
-                <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{user.name} {user.lastName}</p>
-                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">{user.passport}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-3 border-t border-slate-200 dark:border-slate-700/60">
-              <div>
-                <span className="text-[9px] text-slate-400 block uppercase">Nacionalidad</span>
-                <span className="font-medium text-slate-700 dark:text-slate-300">{user.country}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 block uppercase">Puntos acumulados</span>
-                <span className="font-semibold text-[#EA580C]">{user.points.toLocaleString()} pts</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 block uppercase">Emisión</span>
-                <span className="text-slate-600 dark:text-slate-400">2022 / Digital</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 block uppercase">Estado</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Activo</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Stamps Grid */}
-          <div className="md:col-span-7 space-y-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                Historial de Destinos Visitados ({stamps.length})
-              </span>
-              <span className="text-[11px] text-slate-400">Verificado</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {stamps.map((stamp, idx) => (
-                <div
-                  key={idx}
-                  className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition"
-                  title={`Visita a ${stamp.country}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs">{stamp.icon}</span>
-                    <span className="text-[8px] font-mono font-medium text-slate-400">{stamp.code}</span>
-                  </div>
-                  <div className="my-1">
-                    <span className="text-[11px] font-semibold block leading-tight text-slate-800 dark:text-slate-200 truncate">{stamp.seal}</span>
-                    <span className="text-[9px] text-slate-500 block truncate">{stamp.country.split(',')[0]}</span>
-                  </div>
-                  <div className="text-[9px] font-mono text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 flex justify-between">
-                    <span>REG</span>
-                    <span>{stamp.date}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 
@@ -2872,8 +2559,6 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
         </button>
       </div>
 
-      {/* PERFIL DE VIAJERO */}
-      <Passport3D user={user} />
 
       {/* 4 STAT METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -2930,15 +2615,6 @@ function DashboardPage({ user, trips, orders = [], onRefreshOrders, onNewBooking
         </div>
       </div>
 
-      {/* FEATURED BOARDING PASS DEL PRÓXIMO VIAJE */}
-      {nextTrip && (
-        <div className="space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-            Próximo Itinerario Confirmado
-          </span>
-          <BoardingPass3D trip={nextTrip} user={user} />
-        </div>
-      )}
 
       {/* TRIPS LIST WITH TABS */}
       <div className="space-y-5">
@@ -3861,7 +3537,6 @@ function CheckoutPage({
   const [cvv, setCvv] = useState<string>('842');
   const [installments, setInstallments] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [isCardFlipped, setIsCardFlipped] = useState<boolean>(false);
   const [generatedInvoice, setGeneratedInvoice] = useState<string>('FAC-2026-084');
 
   // Financial calculations
@@ -4214,16 +3889,6 @@ function CheckoutPage({
               </button>
             </div>
 
-            {/* DYNAMIC CREDIT CARD WIDGET */}
-            <Card3D
-              cardNumber={cardNumber}
-              cardHolder={cardHolder}
-              expiry={expiry}
-              cvv={cvv}
-              isFlipped={isCardFlipped}
-              onFlipToggle={() => setIsCardFlipped(!isCardFlipped)}
-            />
-
             {/* Card Inputs */}
             <div className="space-y-4 pt-1">
               <div>
@@ -4237,7 +3902,6 @@ function CheckoutPage({
                     maxLength={19}
                     value={cardNumber}
                     onChange={handleCardNumberChange}
-                    onFocus={() => setIsCardFlipped(false)}
                     placeholder="1234 5678 9012 3456"
                     className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                   />
@@ -4254,7 +3918,6 @@ function CheckoutPage({
                   required
                   value={cardHolder}
                   onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                  onFocus={() => setIsCardFlipped(false)}
                   placeholder="MARÍA GONZÁLEZ"
                   className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm uppercase focus:outline-hidden focus:border-[#0284C7]"
                 />
@@ -4271,7 +3934,6 @@ function CheckoutPage({
                     maxLength={5}
                     value={expiry}
                     onChange={handleExpiryChange}
-                    onFocus={() => setIsCardFlipped(false)}
                     placeholder="12/28"
                     className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                   />
@@ -4282,7 +3944,7 @@ function CheckoutPage({
                     <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                       Código CVV
                     </label>
-                    <span className="text-[10px] text-slate-400">Ver reverso</span>
+                    <span className="text-[10px] text-slate-400">3 dígitos al dorso</span>
                   </div>
                   <input
                     type="password"
@@ -4290,7 +3952,6 @@ function CheckoutPage({
                     maxLength={4}
                     value={cvv}
                     onChange={(e) => setCvv(e.target.value.slice(0, 4))}
-                    onFocus={() => setIsCardFlipped(true)}
                     placeholder="123"
                     className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm font-mono focus:outline-hidden focus:border-[#0284C7]"
                   />
