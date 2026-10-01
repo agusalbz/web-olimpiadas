@@ -16,7 +16,7 @@
 
 | Requisito Oficial | Módulo / Funcionalidad | Descripción |
 | :---: | :--- | :--- |
-| **Comisión Principal** | **Carrito de Compras Multi-Producto** | Selección simultánea de paquetes, pasajes aéreos, hoteles y alquiler de autos con cálculo en tiempo real y soporte multimoneda (USD, EUR, ARS). |
+| **Comisión Principal** | **Carrito de Compras Multi-Producto** | Selección simultánea de paquetes, pasajes aéreos, hoteles y alquiler de autos con cálculo en tiempo real y cotización contable en Pesos Argentinos (ARS). |
 | **Punto 1.3.1** | **Catálogo Dual (Gráfico vs. Lista)** | Conmutador interactivo entre la cuadrícula visual de paquetes y la **tabla técnica en lista sin imágenes**, optimizada para alto rendimiento y consulta rápida. |
 | **Punto 1.3.3** | **Estado "Pendiente de Entrega"** | Tras el pago en pasarela, la orden se registra en base de datos con estado `pendiente_entrega`, reservando cupos sin emitir vouchers hasta la validación de ventas. |
 | **Punto 1.3.4** | **Gestión de Pedidos del Cliente** | Desde el Dashboard, el usuario puede inspeccionar sus órdenes pendientes, **modificar observaciones/requisitos** o **cancelar el pedido** con restitución automática de stock. |
@@ -30,20 +30,21 @@
 El sistema dispone de accesos de prueba preconfigurados con un solo clic desde la pantalla de **Iniciar Sesión**:
 
 * **👤 Pasajera (Cliente):** `evaluador@ipp.edu.ar` (o botón de acceso rápido) — Permite armar carritos, comprar, ver órdenes pendientes y modificarlas.
-* **👔 Jefe de Ventas (Administrador):** `admin@viajaya.com` (o botón *"Panel Ventas"* en la barra superior) — Acceso total a despacho, stock, libro contable de facturas y auditoría de emails.
+* **👔 Jefe de Ventas (Administrador):** `admin@horizonte.com` / `admin123` (o botón *"Panel Ventas"* en la barra superior) — Acceso total a despacho, stock, libro contable de facturas y auditoría de emails.
 
 ---
 
-## 🎨 Sistema de Diseño UI/UX: Paleta 60-30-10
+## 🎨 Sistema de Diseño UI/UX: Modo Oscuro Sobrio y Profesional
 
-La interfaz respeta la regla de proporción áurea **60-30-10**, optimizada para contraste, legibilidad técnica y confort visual con soporte nativo de **Modo Claro / Modo Oscuro**:
+La interfaz implementa un **Modo Oscuro Permanente** de estándar enterprise, priorizando el contenido, la claridad de los datos y la ausencia de distracciones visuales:
 
 | Rol Funcional | Nombre Técnico | Proporción | HEX | Aplicación en la Interfaz |
 | :--- | :--- | :---: | :---: | :--- |
-| **Dominante (Claro)** | *Slate 50* | **60%** | `#F8FAFC` | Fondo general, lienzos y contenedores base. |
-| **Dominante (Oscuro)** | *Slate 950* | **60%** | `#0B0F17` | Fondo nocturno sobrio que destaca datos y componentes. |
-| **Marca y Confianza** | *Sky Blue / Cyan* | **30%** | `#0284C7` | Barras de navegación, cabeceras de tablas, insignias y botones primarios. |
-| **Acento y Conversión** | *Orange Action* | **10%** | `#EA580C` | Exclusivo para llamados a la acción prioritarios: *"Pagar"*, *"Añadir al Carrito"*, totales y alertas. |
+| **Fondo Base** | *Slate 950 Deep* | **60%** | `#0B0F17` | Fondo nocturno sobrio que destaca datos, tablas y componentes. |
+| **Superficies & Paneles** | *Slate 900* | **30%** | `#0F172A` | Tarjetas técnicas, modales, barras laterales y cabeceras tabulares. |
+| **Bordes & Separadores** | *Slate 800* | — | `#1E293B` | Delimitación sutil y limpia de campos y filas. |
+| **Acento y Conversión** | *Orange Action / Sky* | **10%** | `#EA580C` | Exclusivo para llamados a la acción prioritarios: *"Pagar"*, *"Añadir al Carrito"*, totales y estados clave. |
+| **Moneda Oficial** | *Pesos Argentinos* | — | `ARS ($)` | Moneda unificada para todas las operaciones y cálculos fiscales. |
 
 ---
 
