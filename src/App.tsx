@@ -65,164 +65,26 @@ export type PageType = 'home' | 'login' | 'register' | 'dashboard' | 'profile' |
 
 
 // ==========================================
-// 🌟 CHICHES & DELIGHT SYSTEM: CURRENCIES & SOUND
 // ==========================================
-type CurrencyType = 'USD' | 'EUR' | 'ARS' | 'MXN';
+// PRECIOS: EXCLUSIVAMENTE EN PESOS ARGENTINOS (ARS)
+// ==========================================
+export type CurrencyType = 'ARS';
 
-const CURRENCY_CONFIG: Record<CurrencyType, { rate: number; symbol: string; label: string; flag: string }> = {
-  USD: { rate: 1.0, symbol: 'USD $', label: 'USD', flag: '🇺🇸' },
-  EUR: { rate: 0.92, symbol: '€', label: 'EUR', flag: '🇪🇺' },
-  ARS: { rate: 1350, symbol: 'AR$', label: 'ARS', flag: '🇦🇷' },
-  MXN: { rate: 18.2, symbol: 'Mex$', label: 'MXN', flag: '🇲🇽' },
+const ARS_EXCHANGE_RATE = 1350;
+
+export const formatPriceCustom = (priceUSD: number, _cur?: CurrencyType): string => {
+  const converted = Math.round(priceUSD * ARS_EXCHANGE_RATE);
+  return `$ ${converted.toLocaleString('es-AR')}`;
 };
 
-const formatPriceCustom = (priceUSD: number, cur: CurrencyType = 'USD') => {
-  const conf = CURRENCY_CONFIG[cur] || CURRENCY_CONFIG.USD;
-  const converted = Math.round(priceUSD * conf.rate);
-  return `${conf.symbol} ${converted.toLocaleString('es-ES')} ${conf.label}`;
+// No-op para llamadas sonoras residuales (sin AudioContext ni sobrecarga)
+const soundFx = {
+  playClick: () => {},
+  playWoosh: () => {},
+  playCelebration: () => {},
+  toggleOceanWaves: (_enable: boolean) => {}
 };
 
-// Web Audio Synthesizer (Zero External Dependencies)
-class SoundFxEngine {
-  private ctx: AudioContext | null = null;
-  private ambientGain: GainNode | null = null;
-  private noiseNode: AudioNode | null = null;
-  public isAmbiencePlaying: boolean = false;
-
-  private getCtx(): AudioContext | null {
-    if (typeof window === 'undefined') return null;
-    if (!this.ctx) {
-      const AudioClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioClass) this.ctx = new AudioClass();
-    }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-    return this.ctx;
-  }
-
-  playClick() {
-    try {
-      const ctx = this.getCtx();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(680, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.04);
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.04);
-    } catch {
-      // Ignored
-    }
-  }
-
-  playWoosh() {
-    try {
-      const ctx = this.getCtx();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(220, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(580, ctx.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.12);
-    } catch {
-      // Ignored
-    }
-  }
-
-  playCelebration() {
-    try {
-      const ctx = this.getCtx();
-      if (!ctx) return;
-      const chord = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-      chord.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.1);
-        osc.stop(ctx.currentTime + idx * 0.1 + 0.4);
-      });
-    } catch {
-      // Ignored
-    }
-  }
-
-  toggleOceanWaves(enable: boolean) {
-    try {
-      const ctx = this.getCtx();
-      if (!ctx) return;
-      if (enable) {
-        if (this.isAmbiencePlaying) return;
-        const bufLen = ctx.sampleRate * 2;
-        const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        let last = 0;
-        for (let i = 0; i < bufLen; i++) {
-          const w = Math.random() * 2 - 1;
-          data[i] = (last + 0.02 * w) / 1.02;
-          last = data[i];
-          data[i] *= 3.0;
-        }
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.loop = true;
-
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(320, ctx.currentTime);
-
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.035, ctx.currentTime);
-
-        const lfo = ctx.createOscillator();
-        const lfoGain = ctx.createGain();
-        lfo.frequency.setValueAtTime(0.16, ctx.currentTime);
-        lfoGain.gain.setValueAtTime(0.025, ctx.currentTime);
-        lfo.connect(lfoGain);
-        lfoGain.connect(gain.gain);
-
-        src.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-
-        src.start();
-        lfo.start();
-
-        this.ambientGain = gain;
-        this.noiseNode = src;
-        this.isAmbiencePlaying = true;
-      } else {
-        if (this.ambientGain && ctx) {
-          this.ambientGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
-          setTimeout(() => {
-            if (this.noiseNode && 'stop' in this.noiseNode) (this.noiseNode as AudioBufferSourceNode).stop();
-            this.isAmbiencePlaying = false;
-          }, 450);
-        }
-      }
-    } catch {
-      // Ignored
-    }
-  }
-}
-
-const soundFx = new SoundFxEngine();
 const MOCK_PACKAGES: Package[] = [
   {
     id: 'cancun-7n',
@@ -983,9 +845,7 @@ export default function App() {
     return false;
   });
 
-  const [showPaletteModal, setShowPaletteModal] = useState<boolean>(false);
-  const [currency, setCurrency] = useState<CurrencyType>('USD');
-  const [soundAmbience, setSoundAmbience] = useState<boolean>(false);
+  const currency: CurrencyType = 'ARS';
   const [detailPackage, setDetailPackage] = useState<Package | null>(null);
 
   useEffect(() => {
@@ -1218,22 +1078,6 @@ export default function App() {
               )}
             </nav>
 
-            {/* CURRENCY SELECTOR */}
-            <select
-              value={currency}
-              onChange={(e) => {
-                soundFx.playClick();
-                setCurrency(e.target.value as CurrencyType);
-              }}
-              className="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:border-slate-300 focus:outline-hidden"
-              title="Cambiar divisa"
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="ARS">ARS ($)</option>
-              <option value="MXN">MXN ($)</option>
-            </select>
-
             {/* THEME TOGGLE */}
             <button
               onClick={toggleTheme}
@@ -1243,34 +1087,6 @@ export default function App() {
             >
               <span>{isDarkMode ? '☀️' : '🌙'}</span>
               <span className="hidden lg:inline">{isDarkMode ? 'Claro' : 'Oscuro'}</span>
-            </button>
-
-            {/* SOUND AMBIENCE TOGGLE */}
-            <button
-              onClick={() => {
-                const next = !soundAmbience;
-                setSoundAmbience(next);
-                soundFx.toggleOceanWaves(next);
-              }}
-              className={`p-1.5 px-2.5 rounded-md border transition cursor-pointer flex items-center gap-1.5 text-xs font-medium ${
-                soundAmbience
-                  ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-800 text-[#0284C7]'
-                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-              }`}
-              title="Sonido ambiental de fondo"
-            >
-              <span>{soundAmbience ? '🔊' : '🔈'}</span>
-              <span className="hidden lg:inline">Sonido</span>
-            </button>
-
-            {/* PALETTE INSPECTOR BUTTON */}
-            <button
-              onClick={() => setShowPaletteModal(true)}
-              className="p-1.5 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-xs font-medium flex items-center gap-1.5"
-              title="Ver guía de diseño y paleta de colores"
-            >
-              <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
-              <span className="hidden lg:inline">Paleta</span>
             </button>
 
             {/* 🛒 BOTÓN CARRITO DE COMPRAS */}
@@ -1430,15 +1246,6 @@ export default function App() {
               <span>👔 Panel del Jefe de Ventas</span>
             </button>
 
-            <button
-              onClick={() => {
-                setShowPaletteModal(true);
-                setMobileMenuOpen(false);
-              }}
-              className="block w-full text-left py-2.5 px-3 rounded-lg text-[#64748B] dark:text-[#94A3B8] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] font-medium"
-            >
-              🎨 Ver Paletas de Diseño UX/UI
-            </button>
 
             {user ? (
               <>
@@ -1486,181 +1293,6 @@ export default function App() {
         )}
       </header>
 
-      {/* PALETTE INSPECTOR MODAL */}
-      {showPaletteModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#F8FAFC] dark:bg-[#0F172A] border border-slate-200 dark:border-white/10 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative space-y-6 text-[#1E293B] dark:text-[#E2E8F0] animate-scaleIn my-8">
-            <button
-              onClick={() => setShowPaletteModal(false)}
-              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer transition"
-            >
-              ✕
-            </button>
-
-            <div className="space-y-1 pr-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0EA5E9]/10 text-[#0EA5E9] text-[11px] font-bold uppercase tracking-wider">
-                <span>🎨</span> Sistema de Diseño UI/UX
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold font-fraunces text-[#1E293B] dark:text-[#E2E8F0]">
-                Arquitectura de Color: Horizonte Moderno
-              </h3>
-              <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8]">
-                Estructura fundamentada en la regla áurea 60-30-10 para inspirar confianza bancaria, aventura y estética minimalista con glassmorphism.
-              </p>
-            </div>
-
-            {/* ROLES GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* 60% DOMINANTE */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#1E293B] dark:text-white">
-                      60% Dominante
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">
-                      Fondo
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mb-3">
-                    Lienzo principal para limpieza visual, amplitud y calma visual.
-                  </p>
-                </div>
-                <div className="space-y-2 font-mono text-[10px]">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-[#F8FAFC] border border-slate-200 text-slate-800">
-                    <div className="w-5 h-5 rounded-md bg-[#F8FAFC] border border-slate-300 shrink-0" />
-                    <div>
-                      <span className="font-bold">#F8FAFC</span>
-                      <span className="block text-[9px] text-slate-500">Claro: Blanco Caliza</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-[#0F172A] border border-slate-700 text-white">
-                    <div className="w-5 h-5 rounded-md bg-[#0F172A] border border-slate-600 shrink-0" />
-                    <div>
-                      <span className="font-bold">#0F172A</span>
-                      <span className="block text-[9px] text-slate-400">Oscuro: Azul Abisal</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 30% SECUNDARIO / MARCA */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-sky-200 dark:border-sky-500/20 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0EA5E9]">
-                      30% Marca & Confianza
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950/60 text-[#0EA5E9] font-bold">
-                      Identidad
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mb-3">
-                    Títulos, avatares, bordes sutiles, iconos nav y halos del globo 3D.
-                  </p>
-                </div>
-                <div className="space-y-2 font-mono text-[10px]">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-slate-800 dark:text-sky-200">
-                    <div className="w-5 h-5 rounded-md bg-[#0EA5E9] shrink-0 shadow-xs" />
-                    <div>
-                      <span className="font-bold text-[#0EA5E9]">#0EA5E9</span>
-                      <span className="block text-[9px] text-slate-500 dark:text-slate-400">Azul Océano / Cyan</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-slate-800 dark:text-sky-200">
-                    <div className="w-5 h-5 rounded-md bg-[#0284C7] shrink-0" />
-                    <div>
-                      <span className="font-bold text-[#0284C7]">#0284C7</span>
-                      <span className="block text-[9px] text-slate-500 dark:text-slate-400">Hover / Profundidad</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 10% ACENTO / CTA */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-orange-200 dark:border-orange-500/20 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#F97316]">
-                      10% Acento & CTA
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#F97316] font-bold">
-                      Conversión
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] mb-3">
-                    Uso exclusivo para botones "Reservar", precios y tags "Más vendido".
-                  </p>
-                </div>
-                <div className="space-y-2 font-mono text-[10px]">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 text-slate-800 dark:text-orange-200">
-                    <div className="w-5 h-5 rounded-md bg-[#F97316] shrink-0 shadow-xs" />
-                    <div>
-                      <span className="font-bold text-[#F97316]">#F97316</span>
-                      <span className="block text-[9px] text-slate-500 dark:text-slate-400">Naranja Aventura / Atardecer</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 text-slate-800 dark:text-orange-200">
-                    <div className="w-5 h-5 rounded-md bg-[#EA580C] shrink-0" />
-                    <div>
-                      <span className="font-bold text-[#EA580C]">#EA580C</span>
-                      <span className="block text-[9px] text-slate-500 dark:text-slate-400">Hover Conversión</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* GLASSMORPHISM & TYPOGRAPHY SPECS */}
-            <div className="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/60 backdrop-blur-md border border-slate-200 dark:border-white/10 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9] block">
-                ✨ Especificaciones de Superficies Glassmorphism & Tipografía
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-white/60 dark:border-white/10 space-y-1">
-                  <div className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">Modo Claro:</div>
-                  <p className="text-[#64748B] dark:text-[#94A3B8] font-mono text-[11px]">
-                    background: rgba(255, 255, 255, 0.7)<br/>
-                    backdrop-filter: blur(12px)<br/>
-                    border: 1px solid rgba(255, 255, 255, 0.6)<br/>
-                    texto: #1E293B / #64748B
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-white/60 dark:border-white/10 space-y-1">
-                  <div className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">Modo Oscuro:</div>
-                  <p className="text-[#64748B] dark:text-[#94A3B8] font-mono text-[11px]">
-                    background: rgba(30, 41, 59, 0.7)<br/>
-                    backdrop-filter: blur(12px)<br/>
-                    border: 1px solid rgba(255, 255, 255, 0.1)<br/>
-                    texto: #E2E8F0 / #94A3B8
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* MODAL ACTIONS */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/10">
-              <span className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-                Modo actual activo: <strong className="text-[#0EA5E9]">{isDarkMode ? 'Modo Oscuro' : 'Modo Claro'}</strong>
-              </span>
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  onClick={toggleTheme}
-                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-bold transition cursor-pointer shadow-md active:scale-95"
-                >
-                  Alternar a {isDarkMode ? 'Modo Claro ☀️' : 'Modo Oscuro 🌙'}
-                </button>
-                <button
-                  onClick={() => setShowPaletteModal(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-white/20 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MAIN VIEW CONTENT */}
       <main className="flex-1">
@@ -1817,13 +1449,6 @@ export default function App() {
         onBookNow={(p) => handleBookNow(p)}
       />
 
-      {/* FLOATING 3D AI TRAVEL CONCIERGE */}
-      <ConciergeWidget
-        packages={MOCK_PACKAGES}
-        onSelectPackage={(p) => {
-          setDetailPackage(p);
-        }}
-      />
 
       {/* FOOTER */}
       <Footer onNavigate={navigateTo} />
@@ -1919,35 +1544,23 @@ function PackageDetailModal({ pkg, currency, onClose, onBookNow }: PackageDetail
           </div>
         </div>
 
-        {/* Live Weather Widget Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-sky-50/80 dark:bg-slate-800/80 border border-sky-200/70 dark:border-sky-500/20 text-xs">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">🌦️</span>
-            <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] font-bold block">Clima Actual</span>
-              <span className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">{pkg.weather?.condition || 'Soleado ☀️'}</span>
-            </div>
+        {/* Clean Travel Info Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+          <div>
+            <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Duración</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{pkg.nights} Noches / {pkg.nights + 1} Días</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">🌡️</span>
-            <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] font-bold block">Temperatura</span>
-              <span className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">{pkg.weather?.temp || '28°C'}</span>
-            </div>
+          <div>
+            <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Alojamiento</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">Hotel 4★ / 5★ Sup</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">💧</span>
-            <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] font-bold block">Humedad</span>
-              <span className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">{pkg.weather?.humidity || '60%'}</span>
-            </div>
+          <div>
+            <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Régimen</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">Desayuno / All-Inc</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">💨</span>
-            <div>
-              <span className="text-[10px] uppercase text-[#64748B] dark:text-[#94A3B8] font-bold block">Vientos</span>
-              <span className="font-bold text-[#1E293B] dark:text-[#E2E8F0]">{pkg.weather?.wind || '12 km/h'}</span>
-            </div>
+          <div>
+            <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Asistencia</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Incluida 24/7</span>
           </div>
         </div>
 
@@ -2165,204 +1778,7 @@ function Passport3D({ user }: { user: User }) {
   );
 }
 
-// ==========================================
-// 🤖 COMPONENTE 3D: CONCIERGE ASISTENTE VIRTUAL
-// ==========================================
-interface ConciergeWidgetProps {
-  onSelectPackage: (pkg: Package) => void;
-  packages: Package[];
-}
 
-function ConciergeWidget({ onSelectPackage, packages }: ConciergeWidgetProps) {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string; actionPkgId?: string }>>([
-    {
-      sender: 'bot',
-      text: '¡Hola! Soy tu Concierge 3D de Horizonte Moderno. ¿Buscas playa paradisíaca, aventura cultural o una escapada romántica? Elige una opción o pregúntame lo que desees.'
-    }
-  ]);
-  const [inputVal, setInputVal] = useState<string>('');
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-
-  const quickQuestions = [
-    { text: '🏖️ ¿Cuál es el mejor destino de playa?', answer: 'Te recomiendo Cancún: playas turquesa, hotel 5★ All-Inclusive y crucero en catamarán incluido.', pkgId: 'cancun-7n' },
-    { text: '💍 ¿El más romántico para parejas?', answer: 'París o Santorini son ideales: cenas gourmet a la luz de las velas y vistas panorámicas inigualables.', pkgId: 'paris-10n' },
-    { text: '💳 ¿Cómo funcionan las cuotas sin interés?', answer: 'Puedes financiar hasta en 12 cuotas fijas con Visa, Mastercard y Amex con validación 3D-Secure.' },
-    { text: '🛡️ ¿Qué incluye la cobertura Horizonte Care?', answer: 'Asistencia médica hasta $50,000 USD, compensación por demoras y pérdida de equipaje 24/7.' },
-  ];
-
-  const handleSend = (userText: string, customAnswer?: string, pkgId?: string) => {
-    if (!userText.trim()) return;
-    soundFx.playClick();
-    setMessages((prev) => [...prev, { sender: 'user', text: userText }]);
-    setInputVal('');
-    setIsTyping(true);
-
-    setTimeout(() => {
-      setIsTyping(false);
-      soundFx.playWoosh();
-      let botResponse = customAnswer;
-      let matchedPkg = pkgId;
-
-      if (!botResponse) {
-        const lower = userText.toLowerCase();
-        if (lower.includes('playa') || lower.includes('caribe') || lower.includes('cancun')) {
-          botResponse = '¡El Caribe mexicano te espera! Cancún cuenta con aguas cristalinas, resort todo incluido y traslados privados.';
-          matchedPkg = 'cancun-7n';
-        } else if (lower.includes('paris') || lower.includes('europa') || lower.includes('romantico') || lower.includes('pareja')) {
-          botResponse = 'París y Santorini son los destinos favoritos de los enamorados, con paseos en barco y cenas de alta cocina.';
-          matchedPkg = 'paris-10n';
-        } else if (lower.includes('bali') || lower.includes('aventura') || lower.includes('selva')) {
-          botResponse = 'Bali te ofrece templos sobre el mar, terrazas de arroz y villas privadas con piscina en plena naturaleza.';
-          matchedPkg = 'bali-8n';
-        } else if (lower.includes('machu') || lower.includes('peru') || lower.includes('inca')) {
-          botResponse = 'Machu Picchu incluye el tren panorámico 360° y guía arqueológico privado para una experiencia mística.';
-          matchedPkg = 'machu-picchu-6n';
-        } else if (lower.includes('precio') || lower.includes('cuota') || lower.includes('pago')) {
-          botResponse = 'Nuestras tarifas incluyen tasas e impuestos sin cargos ocultos, y puedes pagar en hasta 12 cuotas fijas con 3D-Secure.';
-        } else {
-          botResponse = '¡Excelente consulta! Te recomiendo explorar nuestro Globo 3D interactivo en la página principal para visualizar las rutas y atractivos en tiempo real.';
-        }
-      }
-
-      setMessages((prev) => [...prev, { sender: 'bot', text: botResponse || '', actionPkgId: matchedPkg }]);
-    }, 600);
-  };
-
-  return (
-    <>
-      {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-40">
-        {!isOpen && (
-          <button
-            onClick={() => {
-              soundFx.playClick();
-              setIsOpen(true);
-            }}
-            className="w-12 h-12 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer relative"
-            title="Asistente de Consultas"
-            aria-label="Abrir asistente de consultas"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* Floating Chat Modal */}
-      {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col h-[480px]">
-          {/* Header */}
-          <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-[#0284C7] flex items-center justify-center text-sm font-semibold">
-                HM
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-                  Asistente de Viaje
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-                </span>
-                <span className="text-[10px] text-slate-400 block">Horizonte Moderno</span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                soundFx.playClick();
-                setIsOpen(false);
-              }}
-              className="text-slate-400 hover:text-white p-1 rounded-md transition"
-              aria-label="Cerrar chat"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Messages list */}
-          <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs">
-            {messages.map((m, idx) => (
-              <div
-                key={idx}
-                className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
-              >
-                <div
-                  className={`p-2.5 rounded-lg max-w-[85%] leading-relaxed ${
-                    m.sender === 'user'
-                      ? 'bg-[#0284C7] text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60'
-                  }`}
-                >
-                  <p>{m.text}</p>
-                </div>
-                {m.actionPkgId && (
-                  <button
-                    onClick={() => {
-                      const p = packages.find((x) => x.id === m.actionPkgId);
-                      if (p) onSelectPackage(p);
-                      setIsOpen(false);
-                    }}
-                    className="mt-1 px-2.5 py-1 rounded-md bg-[#0284C7] text-white text-[10px] font-medium hover:bg-[#0369A1] transition cursor-pointer flex items-center gap-1"
-                  >
-                    <span>Ver este paquete</span>
-                    <span>→</span>
-                  </button>
-                )}
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex items-center gap-1 text-slate-400 text-xs italic">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-bounce [animation-delay:0.4s]" />
-                <span>Escribiendo...</span>
-              </div>
-            )}
-          </div>
-
-          {/* Suggested Quick Prompt Chips */}
-          <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-x-auto flex gap-1.5">
-            {quickQuestions.map((q, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSend(q.text, q.answer, q.pkgId)}
-                className="px-2 py-1 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] text-slate-600 dark:text-slate-400 hover:border-[#0284C7] whitespace-nowrap transition cursor-pointer shrink-0"
-              >
-                {q.text}
-              </button>
-            ))}
-          </div>
-
-          {/* Input field */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend(inputVal);
-            }}
-            className="p-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900"
-          >
-            <input
-              type="text"
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              placeholder="Escribe tu consulta..."
-              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-[#0284C7]"
-            />
-            <button
-              type="submit"
-              className="p-1.5 rounded-md bg-[#0284C7] hover:bg-[#0369A1] text-white transition cursor-pointer"
-              aria-label="Enviar mensaje"
-            >
-              <svg className="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-              </svg>
-            </button>
-          </form>
-        </div>
-      )}
-    </>
-  );
-}
 
 function HomePage({
   packages,
@@ -4447,7 +3863,7 @@ function CheckoutPage({
   pkg,
   cartItems = [],
   onClearCart,
-  currency: _currency = 'USD',
+  currency: _currency = 'ARS',
   formatPrice,
   passengersCount,
   paymentDone,
