@@ -834,33 +834,16 @@ function BoardingPass3D({ trip, user }: { trip: Trip; user: User }) {
 
 // =========================================================
 // 🚀 MAIN APP COMPONENT
-// =========================================================
 export default function App() {
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('horizontemoderno_theme');
-      if (savedTheme) return savedTheme === 'dark';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const isDarkMode = true;
 
   const currency: CurrencyType = 'ARS';
   const [detailPackage, setDetailPackage] = useState<Package | null>(null);
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('horizontemoderno_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('horizontemoderno_theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => !prev);
-  };
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('horizontemoderno_theme', 'dark');
+  }, []);
 
   // Navigation State
   const [page, setPage] = useState<PageType>('home');
@@ -1013,9 +996,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col font-outfit antialiased transition-colors duration-300 ${
-        isDarkMode ? 'dark bg-[#0F172A] text-[#E2E8F0]' : 'bg-[#F8FAFC] text-[#1E293B]'
-      } selection:bg-[#F97316]/25 selection:text-[#F97316]`}
+      className="min-h-screen flex flex-col font-outfit antialiased dark bg-[#0B0F17] text-[#F1F5F9] selection:bg-[#EA580C]/25 selection:text-[#EA580C]"
     >
       {/* Toast Notification */}
       {toastMessage && (
@@ -1078,16 +1059,6 @@ export default function App() {
               )}
             </nav>
 
-            {/* THEME TOGGLE */}
-            <button
-              onClick={toggleTheme}
-              aria-label="Cambiar tema de color"
-              className="p-1.5 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-xs font-medium flex items-center gap-1.5"
-              title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            >
-              <span>{isDarkMode ? '☀️' : '🌙'}</span>
-              <span className="hidden lg:inline">{isDarkMode ? 'Claro' : 'Oscuro'}</span>
-            </button>
 
             {/* 🛒 BOTÓN CARRITO DE COMPRAS */}
             <button

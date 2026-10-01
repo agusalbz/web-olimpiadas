@@ -85,16 +85,10 @@ html, body {
   padding: 0;
   overflow-x: hidden;
   min-height: 100vh;
-  background-color: var(--color-bg-light);
-  color: var(--color-text-light-main);
-  transition: background-color 0.2s ease, color 0.2s ease;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.dark body {
   background-color: var(--color-bg-dark);
   color: var(--color-text-dark-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Map font-fraunces to modern clean sans-serif with tighter tracking */
