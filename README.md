@@ -1,4 +1,5 @@
-# 🌍 Horizonte Moderno — Plataforma Turística Prémium 3D
+# 🌍 Horizonte Moderno — Plataforma Comercial y Turística
+### Olimpiadas de Informática / IPP – Instancia Escolar 6to Año (E.I.C.O. N° 1)
 
 [![React 19](https://img.shields.io/badge/React-19.0.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -7,131 +8,80 @@
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL_3D-000000?logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald-600.svg)](LICENSE)
 
-**Horizonte Moderno** es una plataforma web completa de venta y reserva de paquetes turísticos prémium, inspirada en los estándares de clase mundial de la industria del turismo y la tecnología (Despegar, Airbnb Luxe, Booking). 
-
-Diseñada con un estilo minimalista, limpio y moderno, implementa de forma rigurosa la regla de diseño **60-30-10**, superficies con efecto **Glassmorphism**, soporte completo para **Modo Claro / Modo Oscuro** y componentes interactivos **3D acelerados por GPU**.
+**Horizonte Moderno** es una solución web comercial integral desarrollada para la Instancia Escolar de las Olimpiadas IPP. Combina una experiencia de cliente fluida con un motor relacional en almacenamiento local (`DbStorageService`) y un panel de gestión administrativa interna para el **Jefe de Ventas**, cumpliendo rigurosamente los requerimientos del pliego oficial.
 
 ---
 
-## 🎨 Sistema de Diseño UI/UX: Paleta de Colores & Regla 60-30-10
+## 🎯 Cumplimiento de Requerimientos del Pliego (Olimpiadas IPP)
 
-La interfaz respeta la regla de proporción áurea **60-30-10**, optimizada para inspirar confianza bancaria y transmitir aventura con pleno soporte para accesibilidad **WCAG 2.1 (AA y AAA)**:
-
-| Rol Funcional | Nombre Comercial | Proporción | HEX | RGB | HSL | Ratio WCAG | Aplicación en la Interfaz |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Dominante (Claro)** | *Blanco Caliza / Gris Niebla* | **60%** | `#F8FAFC` | `248, 250, 252` | `210°, 40%, 98%` | Base | Lienzo principal del modo claro, fondos de página y contenedores base. |
-| **Dominante (Oscuro)** | *Azul Abisal / Medianoche* | **60%** | `#0F172A` | `15, 23, 42` | `222°, 47%, 11%` | Base | Lienzo del modo oscuro. Fondo cinematográfico que potencia los elementos 3D. |
-| **Marca Base** | *Azul Océano Profundo / Cyan* | **30%** | `#0EA5E9` | `14, 165, 233` | `199°, 89%, 48%` | 4.6:1 (AA) | Logotipo, isotipo, títulos, iconos de navegación, partículas del globo 3D. |
-| **Marca Hover** | *Azul Océano Intenso* | — | `#0284C7` | `2, 132, 199` | `201°, 96%, 39%` | 5.8:1 (AA) | Estados de foco y hover en enlaces interactivos y bordes activos. |
-| **Marca Dark Glow** | *Cyan Cielo / Luminiscencia* | — | `#38BDF8` | `56, 189, 248` | `198°, 93%, 60%` | 7.9:1 (AAA) | Rutas geodésicas en Three.js y halos de luz en modo oscuro. |
-| **Marca Soft Tint** | *Cyan Brisa Suave* | — | `#E0F2FE` | `224, 242, 254` | `204°, 100%, 94%` | 14.1:1 (AAA) | Fondos de pastillas de categoría activa y badges informativos. |
-| **Acento CTA** | *Naranja Aventura / Atardecer* | **10%** | `#F97316` | `249, 115, 22` | `25°, 95%, 53%` | 3.5:1 (UI) | **Conversión pura:** Botones *"Reservar Ahora"*, *"Confirmar Pago"*, precios y pines. |
-| **Acento Hover** | *Naranja Fuego / Terracota* | — | `#EA580C` | `234, 88, 12` | `21°, 90%, 48%` | 4.2:1 (AA) | Hover en botones de acción prioritaria. |
-| **Acento Soft Tint** | *Naranja Resplandor Suave* | — | `#FFEDD5` | `255, 237, 213` | `34°, 100%, 92%` | 13.5:1 (AAA) | Badges de ofertas (*"Más Vendido"*, *"Oferta Limitada"*). |
-| **Texto Principal** | *Gris Pizarra / Blanco Hielo* | — | `#1E293B` / `#F8FAFC` | — | — | >13:1 (AAA) | Lectura de alta jerarquía y contraste según el tema activo. |
-| **Texto Muted** | *Gris Tormenta / Plata* | — | `#64748B` / `#94A3B8` | — | — | >4.5:1 (AA) | Párrafos descriptivos, cláusulas legales y subtítulos secundarios. |
-
-### 🪞 Superficies Glassmorphism (`.glass-card`)
-- **Modo Claro:** `rgba(255, 255, 255, 0.70)` con `backdrop-filter: blur(12px)`, borde `1px solid rgba(255, 255, 255, 0.60)` y sombra translúcida `rgba(14, 165, 233, 0.06)`.
-- **Modo Oscuro:** `rgba(30, 41, 59, 0.70)` con `backdrop-filter: blur(12px)`, borde `1px solid rgba(255, 255, 255, 0.08)` y sombra profunda `rgba(0, 0, 0, 0.35)`.
+| Requisito Oficial | Módulo / Funcionalidad | Descripción |
+| :---: | :--- | :--- |
+| **Comisión Principal** | **Carrito de Compras Multi-Producto** | Selección simultánea de paquetes, pasajes aéreos, hoteles y alquiler de autos con cálculo en tiempo real y soporte multimoneda (USD, EUR, ARS). |
+| **Punto 1.3.1** | **Catálogo Dual (Gráfico vs. Lista)** | Conmutador interactivo entre la cuadrícula visual de paquetes y la **tabla técnica en lista sin imágenes**, optimizada para alto rendimiento y consulta rápida. |
+| **Punto 1.3.3** | **Estado "Pendiente de Entrega"** | Tras el pago en pasarela, la orden se registra en base de datos con estado `pendiente_entrega`, reservando cupos sin emitir vouchers hasta la validación de ventas. |
+| **Punto 1.3.4** | **Gestión de Pedidos del Cliente** | Desde el Dashboard, el usuario puede inspeccionar sus órdenes pendientes, **modificar observaciones/requisitos** o **cancelar el pedido** con restitución automática de stock. |
+| **Puntos 1.4.1 a 1.4.6** | **Panel de Ventas (Sector Interno)** | Suite administrativa para el Jefe de Ventas: Alta de productos (1.4.1), inventario (1.4.2), bandeja de pendientes (1.4.3), despacho y entrega formal a tabla histórica (1.4.4), estado de cuenta / libro de facturación (1.4.5) y anulación (1.4.6). |
+| **Nota Pág. 2** | **Auditoría Dual de Correos** | Emisión automática de correos tras cada compra (copia al pasajero y aviso a ventas) registrados en la tabla `tbl_correos_audit` con visor modal. |
 
 ---
 
-## 🚀 Tecnologías Utilizadas
+## 🔑 Credenciales para la Mesa Evaluadora
 
-- **Frontend Core:** [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- **Bundler & Dev Server:** [Vite](https://vitejs.dev/) con compilación Rolldown y Hot Module Replacement (HMR)
-- **Motor de Estilos:** [Tailwind CSS v4](https://tailwindcss.com/) utilizando `@tailwindcss/vite` y `@theme` tokens
-- **Gráficos 3D & WebGL:** [Three.js](https://threejs.org/) (geometrías esféricas, partículas procedimentales, curvas geodésicas Bézier cuadráticas)
-- **Audio Sintetizado:** Web Audio API nativo (osciladores senoidales, ruido rosa filtrado con LFO y fanfarrias)
-- **Física de Partículas:** Motor Canvas 2D para explosión de confeti en celebraciones
-- **Tipografías:** Google Fonts:
-  - *Headings:* `Fraunces` (Serif display con elegancia editorial)
-  - *Body & UI:* `Outfit` (Sans-serif geométrica de alta legibilidad)
+El sistema dispone de accesos de prueba preconfigurados con un solo clic desde la pantalla de **Iniciar Sesión**:
+
+* **👤 Pasajera (Cliente):** `evaluador@ipp.edu.ar` (o botón de acceso rápido) — Permite armar carritos, comprar, ver órdenes pendientes y modificarlas.
+* **👔 Jefe de Ventas (Administrador):** `admin@viajaya.com` (o botón *"Panel Ventas"* en la barra superior) — Acceso total a despacho, stock, libro contable de facturas y auditoría de emails.
 
 ---
 
-## 🕹️ Funcionalidades y "Chiches" Destacados
+## 🎨 Sistema de Diseño UI/UX: Paleta 60-30-10
 
-### 1. 🌐 Globo Terráqueo 3D Interactivo (`ThreeGlobe`)
-- Renderizado WebGL en tiempo real con esfera volumétrica y nube de 1.200 partículas de masa continental en Cyan `#0EA5E9`.
-- Arco geodésico de rutas aéreas animadas en `#38BDF8` (`THREE.QuadraticBezierCurve3`).
-- Pines 3D interactivos con ondas expansivas para cada destino turístico.
-- Rotación automática continua con controles de aceleración y soporte de iluminación adaptativa según el tema claro u oscuro.
+La interfaz respeta la regla de proporción áurea **60-30-10**, optimizada para contraste, legibilidad técnica y confort visual con soporte nativo de **Modo Claro / Modo Oscuro**:
 
-### 2. 💳 Tarjeta de Crédito 3D Volteable (`Card3D`)
-- Perspectiva 3D (`perspective: 1500px`) y seguimiento giroscópico del mouse con física de inclinación (*tilt*).
-- Cara frontal con acabado metálico, gradiente azul abisal, chip EMV dorado y relieve de dígitos.
-- Giro realista de 180° en el eje Y que revela la banda magnética negra, panel de firma, CVV dinámico y sello holográfico de seguridad.
-
-### 3. 🎫 Tarjeta de Embarque Isométrica 3D (`BoardingPass3D`)
-- Tarjeta de abordaje en profundidad multicapa Z (`translateZ(40px)`).
-- Sello de lámina holográfica irisada y código de barras electrónico verificado.
-- Sello animado de impacto tras confirmación: `✓ STAMP: RESERVA CONFIRMADA · EMISIÓN 3D`.
-
-### 4. 🌊 Motor de Sonido y Ambiente Inmersivo (Web Audio API)
-- **Olas de Playa 3D:** Generador procedural de oleaje marino mediante osciladores senoidales y amortiguación LFO.
-- Botón en Navbar con ecualizador de barras animadas en tiempo real (`eq-bar-1`, `eq-bar-2`, `eq-bar-3`).
-- Efectos de sonido táctiles (*clics*, *woosh* al girar tarjetas y fanfarria triunfal al pagar).
-
-### 5. 💱 Conversor de Divisas Dinámico
-- Conmutador en tiempo real entre:
-  - 🇺🇸 **USD ($)** — Dólares Estadounidenses
-  - 🇪🇺 **EUR (€)** — Euros
-  - 🇦🇷 **ARS ($)** — Pesos Argentinos
-  - 🇲🇽 **MXN ($)** — Pesos Mexicanos
-- Recalcula instantáneamente todos los precios, paquetes, cuotas e itinerarios.
-
-### 6. ✨ Modal de Experiencia 3D, Clima en Vivo e Itinerario Día a Día
-- **Widget de Clima Simulado:** Temperatura, porcentaje de humedad y velocidad de viento (ej. Cancún: 29°C ☀️, París: 21°C ⛅, Bali: 31°C 🌴).
-- **Itinerario Interactivo Día a Día:** Pestañas navegables con actividades (traslados VIP, catamarán, cenas gourmet, arqueología privada).
-- **Checklist de Inclusiones:** Hoteles 5★, traslados y asistencias.
-
-### 7. 🛂 Pasaporte Digital Biométrico 3D (Dashboard)
-- Libreta de pasaporte digital con textura de cuero y sello en **foil dorado** (*"REPÚBLICA DEL VIAJERO · HORIZONTE MODERNO"*).
-- Ficha de identidad con avatar y estatus **★ SOCIO PLATINO 3D**.
-- **Colección de Sellos de Inmigración Holográficos:** Cancún (México), París (Francia), Bali (Indonesia), Machu Picchu (Perú), Santorini (Grecia) y Dubai (EAU) con micro-giro 3D al posar el cursor.
-
-### 8. 🎊 Cañón de Confeti de Partículas en Checkout
-- Al completar una reserva, un cañón de 150 partículas multicolores con física de gravedad, resistencia de aire y rotación celebra la confirmación.
-
-### 9. 🤖 Concierge de Viajes AI 3D (Widget Flotante)
-- Asistente virtual flotante con pulso de radar (`animate-radar`).
-- Sugerencias rápidas preconfiguradas y campo libre de preguntas con respuestas contextuales y enlaces a paquetes.
-
-### 10. 📋 Página Completa de Términos y Condiciones
-- 8 cláusulas estructuradas (Políticas 24h, Cancelaciones, Horizonte Care, Visas, Pagos 3D, GDPR).
-- Buscador interactivo en vivo e índice lateral sticky con desplazamiento suave.
-- Botón para imprimir o exportar como documento legal en PDF (`window.print()`).
+| Rol Funcional | Nombre Técnico | Proporción | HEX | Aplicación en la Interfaz |
+| :--- | :--- | :---: | :---: | :--- |
+| **Dominante (Claro)** | *Slate 50* | **60%** | `#F8FAFC` | Fondo general, lienzos y contenedores base. |
+| **Dominante (Oscuro)** | *Slate 950* | **60%** | `#0B0F17` | Fondo nocturno sobrio que destaca datos y componentes. |
+| **Marca y Confianza** | *Sky Blue / Cyan* | **30%** | `#0284C7` | Barras de navegación, cabeceras de tablas, insignias y botones primarios. |
+| **Acento y Conversión** | *Orange Action* | **10%** | `#EA580C` | Exclusivo para llamados a la acción prioritarios: *"Pagar"*, *"Añadir al Carrito"*, totales y alertas. |
 
 ---
 
-## 📦 Estructura del Proyecto
+## 🛠️ Stack Tecnológico
+
+* **Frontend Core:** [React 19](https://react.dev/) + [TypeScript 5.7](https://www.typescriptlang.org/)
+* **Bundler & Tooling:** [Vite 8](https://vitejs.dev/) con compilador Rolldown
+* **Motor de Estilos:** [Tailwind CSS v4](https://tailwindcss.com/)
+* **Gráficos 3D:** [Three.js](https://threejs.org/) (Globo terráqueo interactivo con rutas geodésicas y partículas)
+* **Persistencia:** `DbStorageService` emulando un motor relacional en `localStorage` con claves primarias, claves foráneas e integridad referencial (7 tablas).
+
+---
+
+## 📦 Estructura del Código Fuente
 
 ```
 viajaya/
-├── dist/                     # Build de producción optimizado
-├── node_modules/             # Dependencias npm
-├── public/                   # Recursos estáticos
 ├── src/
-│   ├── App.tsx               # Aplicación completa (Arquitectura Single-File con Vistas y 3D)
-│   ├── index.css             # Directivas Tailwind v4, Glassmorphism y keyframes 3D
-│   └── main.tsx              # Punto de entrada de React 19
-├── index.html                # Plantilla HTML5 con viewport y Google Fonts
-├── package.json              # Dependencias y scripts
-├── tsconfig.json             # Configuración TypeScript
-├── vite.config.ts            # Configuración de Vite con Tailwind v4
-└── README.md                 # Documentación técnica oficial
+│   ├── components/
+│   │   ├── CartDrawer.tsx       # Carrito de compras lateral multi-producto
+│   │   └── SalesAdminPanel.tsx  # Panel integral del Jefe de Ventas (1.4.1 a 1.4.6)
+│   ├── services/
+│   │   └── dbStorage.ts         # Motor relacional LocalStorage (clientes, pedidos, stock, facturas, emails)
+│   ├── App.tsx                  # Navegación, vistas (Catálogo dual, Checkout, Dashboard, Términos)
+│   ├── index.css                # Tokens de diseño, tipografía Inter y modo oscuro
+│   └── main.tsx                 # Entrada React 19
+├── package.json
+└── vite.config.ts
 ```
 
 ---
 
-## 🛠️ Instalación y Ejecución Local
+## 🚀 Instalación y Puesta en Marcha
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/TU_USUARIO/horizonte-moderno.git
-   cd horizonte-moderno
+   git clone https://github.com/agusalbz/web-olimpiadas.git
+   cd web-olimpiadas
    ```
 
 2. **Instalar dependencias:**
@@ -139,11 +89,11 @@ viajaya/
    npm install
    ```
 
-3. **Iniciar el servidor de desarrollo:**
+3. **Iniciar servidor de desarrollo:**
    ```bash
    npm run dev
    ```
-   Abre [http://localhost:5173/](http://localhost:5173/) en tu navegador.
+   Acceder a `http://localhost:5173/` en el navegador.
 
 4. **Compilar para producción:**
    ```bash
@@ -152,6 +102,5 @@ viajaya/
 
 ---
 
-## 📄 Licencia
-
-Este proyecto se encuentra bajo la licencia MIT. Diseñado con pasión por la excelencia estética, la innovación 3D y la experiencia de usuario.
+**Equipo de Desarrollo — 6to Año Informática — E.I.C.O. N° 1 "Gral. Enrique Mosconi"**  
+*Caleta Olivia, Santa Cruz, Argentina*
